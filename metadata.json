@@ -1,0 +1,6 @@
+{
+  "name": "Baro Quran Academy",
+  "description": "Baro Qur'aanka iyo Culuumta Shareecada si Casri ah. Machad Caalami ah oo kuu diyaariyey barayaal khibrad leh iyo manhaj tayo sare leh.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
