@@ -3,6 +3,7 @@ import Header from "./components/Header";
 import Hero from "./components/Hero";
 import Features from "./components/Features";
 import ProgramExplorer from "./components/ProgramExplorer";
+import Pricing from "./components/Pricing";
 import Teachers from "./components/Teachers";
 import Testimonials from "./components/Testimonials";
 import Footer from "./components/Footer";
@@ -234,6 +235,9 @@ export default function App() {
             {/* Teachers Profile Area */}
             <Teachers onBookTrial={handleJoinCourse} onJoinClick={handleJoinClick} />
 
+            {/* Pricing Section */}
+            <Pricing onJoinClick={handleJoinClick} lang={lang} />
+
             {/* Testimonials Slider */}
             <Testimonials />
           </div>
@@ -248,7 +252,7 @@ export default function App() {
         )}
 
         {currentRoute === "pricing" && (
-          <ProgramExplorer onJoinCourse={handleJoinCourse} lang={lang} />
+          <Pricing onJoinClick={handleJoinClick} lang={lang} />
         )}
 
         {currentRoute === "teachers" && (
