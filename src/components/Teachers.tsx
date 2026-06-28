@@ -48,7 +48,7 @@ export default function Teachers({ onBookTrial, onJoinClick }: TeachersProps) {
                 <div className="relative aspect-[4/3] bg-stone-100 overflow-hidden">
                   <img
                     src={teacher.avatar}
-                    alt={teacher.name}
+                    alt={`${teacher.name} - Macallin Qur'aan Online (Quran Teacher)`}
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                     referrerPolicy="no-referrer"
                   />

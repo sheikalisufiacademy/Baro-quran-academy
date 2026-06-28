@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
 import Features from "./components/Features";
@@ -47,6 +47,84 @@ export default function App() {
   const [contactEmail, setContactEmail] = useState("");
   const [contactMsg, setContactMsg] = useState("");
   const [contactSuccess, setContactSuccess] = useState(false);
+
+  // Dynamic Page SEO Title and Description Updater based on Selected Route and Language
+  useEffect(() => {
+    let title = "";
+    let desc = "";
+    
+    if (lang === "so") {
+      if (currentRoute === "home") {
+        title = "Baro Qur'aan Online | Dugsi Qur'aan, Tajwiid & Culuumta Shareecada";
+        desc = "Baro Qur'aanka Kariimka ah Online si xirfad leh! Waxaan bixinaa barashada higaada, barashada tajwiidka, xifdinta Qur'aanka (Dugsi Qur'aan), luqadda Carabiga, iyo barashada kutubta culuumta shareecada islamka. Macalimiin Soomaaliyeed oo khubaro ah.";
+      } else if (currentRoute === "programs") {
+        title = "Koorsooyinka & Programyada | Baro Quran Academy";
+        desc = "Baadh barnaamijyada aan bixino: Barashada Higaada, barashada tajwiidka, hifdiga Qur'aanka, barashada kutubta culuumta shareecada Islaamka iyo Carabiga. Dooro koorsada kugu habboon!";
+      } else if (currentRoute === "pricing") {
+        title = "Qorshaha Qiimaha & Lacagta | Baro Quran Academy";
+        desc = "Qiimo jaban oo ku habboon qoys kasta. Ka xisaabi qiimo dhimista qoyska adigoo dooranaya tirada ardayda iyo maalmaha aad rabi lahayd inaad dhigato.";
+      } else if (currentRoute === "teachers") {
+        title = "Macalimiinta Sharafta leh | Baro Quran Academy";
+        desc = "La kulan macalimiinteena khubarada ah ee u tababaran waxbarashada online-ka ah ee Qur'aanka iyo Culuumta Shareecada. Casharro gaar ah oo 1-on-1 ah.";
+      } else if (currentRoute === "about") {
+        title = "Ku saabsan Akadeemiyada | Baro Quran Academy";
+        desc = "Wax ka baro hadafkayaga, aragtidayada, iyo sababta aan u nahay dugsiga online-ka ah ee ugu kalsoonida badan ee barashada Qur'aanka iyo Luqadda Carabiga.";
+      } else if (currentRoute === "blog") {
+        title = "Qoraallada & Maqaallada | Baro Quran Academy";
+        desc = "Akhriso maqaallada ku saabsan barashada Qur'aanka, talooyinka xifdiga, muhiimada tajwiidka, iyo munaasabadaha diiniga ah.";
+      } else {
+        title = "Baro Qur'aan Online - Academy-ga Qur'aanka Kariimka";
+        desc = "Baro Qur'aanka Kariimka ah Online si xirfad leh oo sahlan.";
+      }
+    } else if (lang === "ar") {
+      if (currentRoute === "home") {
+        title = "تعلم القرآن الكريم عبر الإنترنت | أكاديمية بارو للقرآن والعلوم الشرعية";
+        desc = "تعلم القرآن الكريم عبر الإنترنت مع معلمين مجازين ذوي خبرة. نوفر دروس التجويد، حفظ القرآن، اللغة العربية، وعلوم الشريعة الإسلامية. حصص فردية تفاعلية.";
+      } else if (currentRoute === "programs") {
+        title = "البرامج والمسارات التعليمية | أكاديمية بارو للقرآن";
+        desc = "استكشف برامجنا: القاعدة النورانية، التجويد، حفظ القرآن الكريم، علوم الشريعة الإسلامية، واللغة العربية.";
+      } else if (currentRoute === "pricing") {
+        title = "خطط الأسعار والاشتراكات | أكاديمية بارو للقرآن";
+        desc = "خطط أسعار مرنة واقتصادية تناسب الجميع مع خصومات مميزة للمجموعات والعائلات.";
+      } else if (currentRoute === "teachers") {
+        title = "طاقم المعلمين والمعلمات | أكاديمية بارو للقرآن";
+        desc = "نخبة من المعلمين المتميزين ذوي الخبرة الطويلة في تدريس القرآن والعلوم الإسلامية لغير الناطقين بها.";
+      } else {
+        title = "أكاديمية بارو لعلوم القرآن والشريعة";
+        desc = "تعلم القرآن والعلوم الشرعية بطرق تفاعلية وعبر الإنترنت.";
+      }
+    } else { // en
+      if (currentRoute === "home") {
+        title = "Learn Quran Online | Baro Quran Academy - Tajweed & Islamic Studies";
+        desc = "Learn the Holy Quran online professionally! We offer Arabic alphabet basics, Tajweed rules, Quran memorization, Arabic language, and Islamic Sharia books. Expert Somali teachers with personalized 1-on-1 sessions.";
+      } else if (currentRoute === "programs") {
+        title = "Our Programs & Courses | Baro Quran Academy";
+        desc = "Explore our courses: Quran Memorization, Tajweed Rules, Arabic Language Basics, and Islamic Sharia Sciences. Find the perfect course for you or your kids!";
+      } else if (currentRoute === "pricing") {
+        title = "Affordable Study Plans & Pricing | Baro Quran Academy";
+        desc = "Transparent pricing starting from $20/month. Estimate your customized group or family discount using our live pricing calculator!";
+      } else if (currentRoute === "teachers") {
+        title = "Meet Our Certified Teachers | Baro Quran Academy";
+        desc = "Learn from qualified, experienced, and vetted instructors specializing in online Quranic teaching & Arabic instruction.";
+      } else {
+        title = "Baro Quran Academy | Learn Quran & Sharia Online";
+        desc = "Premium online academy for Quran, Tajweed, Arabic language, and Islamic studies with flexible schedules.";
+      }
+    }
+
+    document.title = title;
+    
+    // Update Meta Description
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute("content", desc);
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "description";
+      meta.content = desc;
+      document.head.appendChild(meta);
+    }
+  }, [currentRoute, lang]);
 
   // Dynamic CMS Settings State (No hardcoded text, edited in Admin Portal)
   const [cmsSettings, setCmsSettings] = useState({

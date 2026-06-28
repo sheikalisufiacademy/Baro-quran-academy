@@ -233,7 +233,7 @@ export default function ProgramExplorer({ onJoinCourse, lang }: ProgramExplorerP
                   <div className="relative aspect-[16/10] bg-stone-100 overflow-hidden">
                     <img
                       src={p.image}
-                      alt={p.title}
+                      alt={`${p.title} - Barashada Qur'aanka Online (Quran Course)`}
                       className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                       referrerPolicy="no-referrer"
                     />
@@ -344,7 +344,7 @@ export default function ProgramExplorer({ onJoinCourse, lang }: ProgramExplorerP
               <div className="relative aspect-[16/9] bg-stone-100 shrink-0">
                 <img
                   src={activeDetailCourse.image}
-                  alt={activeDetailCourse.title}
+                  alt={`${activeDetailCourse.title} - Barashada Qur'aanka iyo Culuumta Shareecada`}
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
