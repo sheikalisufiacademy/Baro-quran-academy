@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Search, Award, CheckCircle2, FileDown, Eye, Calendar, User, ShieldCheck } from "lucide-react";
 
 const CERTIFICATE_DB = [
-  { id: "CERT-2026-001", name: "Cabdullaahi Cali", course: "Advanced Tajweed Rule Mastery", date: "June 12, 2026", grade: "Excellent (Mumtaz)", issuer: "Sheikh Cabdiraxmaan Al-Xafid", verified: true },
-  { id: "CERT-2026-002", name: "Xamda Maxamed", course: "Quran Recitation & Fluency Foundation", date: "May 28, 2026", grade: "Excellent (Mumtaz)", issuer: "Ustaadah Maaryama Maxamed", verified: true },
+  { id: "CERT-2026-001", name: "Cabdullaahi Cali", course: "Advanced Tajweed Rule Mastery", date: "June 12, 2026", grade: "Excellent (Mumtaz)", issuer: "Sheekh Cabdiraxmaan Cali", verified: true },
+  { id: "CERT-2026-002", name: "Xamda Maxamed", course: "Quran Recitation & Fluency Foundation", date: "May 28, 2026", grade: "Excellent (Mumtaz)", issuer: "Ustaada Maryama", verified: true },
   { id: "CERT-2026-003", name: "Cumar Farax", course: "Classical Arabic Grammar Level 1", date: "April 15, 2026", grade: "Very Good (Jayid Jidan)", issuer: "Ustaad Axmed Nuur", verified: true }
 ];
 

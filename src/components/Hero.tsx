@@ -5,9 +5,10 @@ import { PlayCircle, ArrowRight, Sparkles, Star, ShieldCheck, Heart } from "luci
 interface HeroProps {
   onJoinClick: () => void;
   onWatchVideoClick: () => void;
+  lang?: string;
 }
 
-export default function Hero({ onJoinClick, onWatchVideoClick }: HeroProps) {
+export default function Hero({ onJoinClick, onWatchVideoClick, lang }: HeroProps) {
   return (
     <section
       id="home"
@@ -35,28 +36,20 @@ export default function Hero({ onJoinClick, onWatchVideoClick }: HeroProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold text-stone-900 tracking-tight leading-tight"
+              className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-stone-900 tracking-tight leading-snug uppercase"
             >
-              Waxbarasho <span className="text-emerald-800 relative inline-block">
-                Tayo Leh
+              <span className="text-emerald-800 relative inline-block">
+                BARO QURANKA KARIIMKA IYO CULUUMTA SHAREECAD ISLAMKA
                 <span className="absolute bottom-1 left-0 w-full h-2 bg-amber-500/20 rounded -z-10" />
-              </span>
+              </span>{" "}
+              ADOO GURIGAAGA JOOGA QAAB ONLINE OO CASRI AH
             </motion.h1>
-
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="font-serif text-xl sm:text-2xl text-stone-800 italic font-medium"
-            >
-              Baro Qur'aanka iyo Culuumta Shareecada si Casri ah.
-            </motion.h2>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="font-sans text-stone-600 max-w-xl leading-relaxed text-base"
+              className="font-sans text-stone-600 max-w-xl leading-relaxed text-sm"
             >
               Baro Quran Academy waa Machad Caalami ah oo kuu diyaariyey barayaal khibrad leh iyo manhaj tayo sare leh oo ku habboon baahidaada.
             </motion.p>
@@ -73,17 +66,10 @@ export default function Hero({ onJoinClick, onWatchVideoClick }: HeroProps) {
                 onClick={onJoinClick}
                 className="inline-flex items-center gap-2 rounded-full bg-emerald-800 px-8 py-4 text-base font-bold text-white hover:bg-emerald-700 transition duration-150 shadow-lg shadow-emerald-900/20 hover:shadow-xl hover:-translate-y-0.5 transform cursor-pointer"
               >
-                <span>Ku biir Hadda</span>
+                <span>
+                  {lang === "ar" ? "سجل الآن" : lang === "en" ? "Register Now" : "Isqor Hadda"}
+                </span>
                 <ArrowRight className="w-5 h-5" />
-              </button>
-
-              <button
-                id="hero-watch-btn"
-                onClick={onWatchVideoClick}
-                className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white/60 px-8 py-4 text-base font-bold text-stone-800 hover:bg-white hover:text-emerald-800 transition duration-150 shadow-sm hover:shadow-md cursor-pointer"
-              >
-                <PlayCircle className="w-5 h-5 text-emerald-800" />
-                <span>Daawo Muqaalka</span>
               </button>
             </motion.div>
 

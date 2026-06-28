@@ -1,13 +1,14 @@
 import React from "react";
 import { TEACHERS } from "../data";
-import { Star, Award, GraduationCap, Calendar, Clock, Heart } from "lucide-react";
+import { Star, Award, GraduationCap, Calendar, Clock, Heart, ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 
 interface TeachersProps {
   onBookTrial: (courseId: string) => void;
+  onJoinClick?: () => void;
 }
 
-export default function Teachers({ onBookTrial }: TeachersProps) {
+export default function Teachers({ onBookTrial, onJoinClick }: TeachersProps) {
   const getCourseIdBySpecialty = (specialty: string) => {
     if (specialty.includes("Tajweed")) return "tajweed";
     if (specialty.includes("Arabic")) return "arabic";
@@ -104,6 +105,20 @@ export default function Teachers({ onBookTrial }: TeachersProps) {
             </motion.div>
           ))}
         </div>
+
+        {/* Bottom CTA Button */}
+        {onJoinClick && (
+          <div className="text-center mt-12">
+            <button
+              id="teachers-cta-register-btn"
+              onClick={onJoinClick}
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-800 hover:bg-emerald-700 px-8 py-3.5 text-sm font-bold text-white transition duration-150 shadow-md shadow-emerald-950/10 hover:shadow-lg hover:-translate-y-0.5 transform cursor-pointer"
+            >
+              <span>Isqor Hadda</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

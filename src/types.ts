@@ -7,6 +7,7 @@ export interface Course {
   reviewCount: number;
   price: string;
   icon: string;
+  image?: string;
   levelDetails: {
     level: string;
     topics: string[];
@@ -29,4 +30,11 @@ export interface Registration {
   level: string;
   preferredTime: string;
   notes?: string;
+  country?: string;
+  city?: string;
+  whatsapp?: string;
+  paymentPlan?: string;
+  studentType?: "single" | "multiple";
+  additionalStudents?: string[];
+  generatedId?: string;
 }

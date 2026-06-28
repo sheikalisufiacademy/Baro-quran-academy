@@ -344,7 +344,7 @@ export default function StudentPortal() {
                     Live Virtual Quran Classroom
                   </h3>
                   <p className="text-xs text-stone-500 max-w-sm mx-auto leading-relaxed mt-1">
-                    Connect directly with Sheikh Cabdiraxmaan Al-Xafid in our secure, high-definition interactive classroom.
+                    Connect directly with Sheikh Cabdiraxmaan Cali in our secure, high-definition interactive classroom.
                   </p>
                 </div>
                 <div>
@@ -367,14 +367,14 @@ export default function StudentPortal() {
                     <div className="relative inline-block">
                       <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" />
                       <img
-                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop"
+                        src="/src/assets/images/sheikh_teaching_adults_1782636711922.jpg"
                         alt="Sheikh Cabdiraxmaan"
                         className="w-24 h-24 rounded-full border-2 border-emerald-500 object-cover relative z-10"
                         referrerPolicy="no-referrer"
                       />
                     </div>
                     <div>
-                      <h4 className="font-display font-bold text-sm text-white">Sheekh Cabdiraxmaan Al-Xafid</h4>
+                      <h4 className="font-display font-bold text-sm text-white">Sheekh Cabdiraxmaan Cali</h4>
                       <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 mt-1">
                         <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                         Live Recitation Check

@@ -1,0 +1,30 @@
+{
+  "entities": {
+    "Registration": {
+      "title": "Registration",
+      "description": "Student registration entries for Baro Quran Academy",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "country": { "type": "string" },
+        "city": { "type": "string" },
+        "course": { "type": "string" },
+        "paymentPlan": { "type": "string" },
+        "studentType": { "type": "string" },
+        "extraStudents": { "type": "array" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "phone", "country", "city", "course", "paymentPlan"]
+    }
+  },
+  "firestore": {
+    "/registrations/{registrationId}": {
+      "schema": "Registration",
+      "description": "Collection of all student registrations"
+    }
+  }
+}

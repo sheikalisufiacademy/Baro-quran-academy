@@ -1,8 +1,12 @@
 import React from "react";
 import { motion } from "motion/react";
-import { GraduationCap, BookOpen, Clock } from "lucide-react";
+import { GraduationCap, BookOpen, Clock, ArrowRight } from "lucide-react";
 
-export default function Features() {
+interface FeaturesProps {
+  onJoinClick?: () => void;
+}
+
+export default function Features({ onJoinClick }: FeaturesProps) {
   const features = [
     {
       icon: <GraduationCap className="w-6 h-6 text-emerald-800" />,
@@ -70,6 +74,20 @@ export default function Features() {
             </motion.div>
           ))}
         </div>
+
+        {/* Bottom CTA Button */}
+        {onJoinClick && (
+          <div className="text-center mt-12">
+            <button
+              id="features-cta-register-btn"
+              onClick={onJoinClick}
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-800 hover:bg-emerald-700 px-8 py-3.5 text-sm font-bold text-white transition duration-150 shadow-md shadow-emerald-950/10 hover:shadow-lg hover:-translate-y-0.5 transform cursor-pointer"
+            >
+              <span>Isqor Hadda</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

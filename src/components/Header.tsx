@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Menu, X, BookOpen, ChevronRight, Phone, Globe, Sun, Moon, Shield, Award, Users, GraduationCap, DollarSign, HelpCircle, Briefcase, Heart, Calendar } from "lucide-react";
+import { Menu, X, Phone, Globe, Sun, Moon, ChevronRight } from "lucide-react";
 import { Language, translations } from "../i18n";
 
 interface HeaderProps {
@@ -25,7 +25,6 @@ export default function Header({
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
-  const [showPortalMenu, setShowPortalMenu] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -37,25 +36,16 @@ export default function Header({
 
   const t = translations[lang];
 
+  // The 8 pages of the app
   const mainLinks = [
-    { label: t.home, id: "home" },
-    { label: t.programs, id: "programs" },
-    { label: t.teachers, id: "teachers" },
-    { label: t.pricing, id: "pricing" },
-    { label: t.certificates, id: "certificates" },
-    { label: t.blog, id: "blog" },
-  ];
-
-  const portalOptions = [
-    { label: t.studentLogin, id: "student-portal", icon: GraduationCap, color: "text-emerald-500 bg-emerald-500/10" },
-    { label: t.teacherLogin, id: "teacher-portal", icon: Users, color: "text-amber-500 bg-amber-500/10" },
-    { label: t.adminLogin, id: "admin-portal", icon: Shield, color: "text-red-500 bg-red-500/10" },
-  ];
-
-  const auxiliaryOptions = [
-    { label: t.events, id: "events", icon: Calendar },
-    { label: t.careers, id: "careers", icon: Briefcase },
-    { label: t.donate, id: "donate", icon: Heart },
+    { label: lang === "ar" ? "الرئيسية 🏠" : lang === "en" ? "Home 🏠" : "Hore 🏠", id: "home" },
+    { label: lang === "ar" ? "البرامج 📖" : lang === "en" ? "Courses 📖" : "Koorsooyinka 📖", id: "programs" },
+    { label: lang === "ar" ? "المعلمون 👨‍🏫" : lang === "en" ? "Teachers 👨‍🏫" : "Macalimiinta 👨‍🏫", id: "teachers" },
+    { label: lang === "ar" ? "الأسعار 💰" : lang === "en" ? "Pricing 💰" : "Qiimaha 💰", id: "pricing" },
+    { label: lang === "ar" ? "حصة تجريبية ⭐" : lang === "en" ? "Free Trial ⭐" : "Cashar Bilaash ⭐", id: "free-trial" },
+    { label: lang === "ar" ? "المدونة 📝" : lang === "en" ? "Blog 📝" : "Maqaallada 📝", id: "blog" },
+    { label: lang === "ar" ? "من نحن ℹ️" : lang === "en" ? "About Us ℹ️" : "Nagu Saabsan ℹ️", id: "about" },
+    { label: lang === "ar" ? "اتصل بنا 📞" : lang === "en" ? "Contact 📞" : "Xiriirka 📞", id: "contact" },
   ];
 
   return (
@@ -63,42 +53,56 @@ export default function Header({
       <header
         className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
           scrolled
-            ? "bg-stone-900/95 backdrop-blur-md shadow-lg shadow-black/20 py-3 border-b border-stone-800"
+            ? "bg-stone-900/95 backdrop-blur-md shadow-lg shadow-black/20 py-3 border-b border-stone-850"
             : "bg-stone-950/40 backdrop-blur-sm border-b border-white/5 py-4"
         } text-white`}
         id="main-header"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            {/* Logo */}
+            {/* Elegant Modern Islamic Logo */}
             <button
               id="header-logo-home-trigger"
               onClick={() => setRoute("home")}
               className="flex items-center gap-2.5 group text-left cursor-pointer border-none bg-transparent"
             >
-              <div className="rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 p-2.5 text-white shadow-md shadow-emerald-950/20 group-hover:scale-105 transition duration-300">
-                <BookOpen className="w-5.5 h-5.5" />
+              <div className="relative rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-900 p-2.5 text-white shadow-lg shadow-emerald-950/30 group-hover:scale-105 transition duration-300 border border-emerald-500/20 flex items-center justify-center">
+                <div className="absolute inset-0 bg-stone-900/10 rounded-2xl" />
+                <svg
+                  className="w-5 h-5 text-amber-400 fill-none relative z-10 stroke-[2.2]"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9 9 0 0 0 9-9c0-1.5-.3-3-.9-4.3l-2.4-1.2A3 3 0 0 0 15 6h-6a3 3 0 0 0-3.7.5L2.9 7.7A9 9 0 0 0 3 12a9 9 0 0 0 9 9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 11.5c0-.8-.7-1.5-1.5-1.5h-5c-.8 0-1.5.7-1.5 1.5M12 10v6M9 16h6" />
+                </svg>
               </div>
               <div>
-                <span className="font-display font-bold text-base md:text-lg text-white tracking-tight block">
-                  {t.brandName}
+                <span className="font-display font-black text-base md:text-lg text-white tracking-tight block">
+                  Baro Quran
                 </span>
-                <span className="text-[10px] text-emerald-400 font-semibold tracking-wider uppercase block -mt-1">
-                  {t.brandSub}
+                <span className="text-[10px] text-amber-400 font-bold tracking-widest uppercase block -mt-1 font-mono">
+                  ACADEMY
                 </span>
               </div>
             </button>
 
             {/* Desktop Navigation */}
-            <nav className="hidden xl:flex items-center gap-6">
+            <nav className="hidden xl:flex items-center gap-5">
               {mainLinks.map((link) => {
                 const isActive = currentRoute === link.id;
                 return (
                   <button
                     key={link.id}
                     id={`nav-link-${link.id}`}
-                    onClick={() => setRoute(link.id)}
-                    className={`font-sans text-xs font-semibold hover:text-emerald-400 transition duration-150 relative py-2 cursor-pointer uppercase tracking-wider ${
+                    onClick={() => {
+                      if (link.id === "free-trial") {
+                        onJoinClick();
+                      } else {
+                        setRoute(link.id);
+                      }
+                    }}
+                    className={`font-sans text-xs font-semibold hover:text-emerald-400 transition duration-150 relative py-2 cursor-pointer tracking-wide ${
                       isActive ? "text-emerald-400" : "text-stone-300"
                     }`}
                   >
@@ -109,70 +113,6 @@ export default function Header({
                   </button>
                 );
               })}
-
-              {/* Portal Mega Menu Dropdown */}
-              <div className="relative">
-                <button
-                  id="nav-portals-dropdown-trigger"
-                  onClick={() => {
-                    setShowPortalMenu(!showPortalMenu);
-                    setShowLangMenu(false);
-                  }}
-                  className="font-sans text-xs font-semibold text-stone-300 hover:text-emerald-400 transition duration-150 py-2 flex items-center gap-1 cursor-pointer uppercase tracking-wider"
-                >
-                  <span>{t.portals}</span>
-                  <ChevronRight className="w-3 h-3 transform rotate-90" />
-                </button>
-
-                <AnimatePresence>
-                  {showPortalMenu && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute right-0 mt-2 w-56 bg-stone-900 border border-stone-800 rounded-xl p-2.5 shadow-2xl"
-                    >
-                      {portalOptions.map((opt) => {
-                        const Icon = opt.icon;
-                        return (
-                          <button
-                            key={opt.id}
-                            id={`portal-dropdown-opt-${opt.id}`}
-                            onClick={() => {
-                              setRoute(opt.id);
-                              setShowPortalMenu(false);
-                            }}
-                            className="w-full flex items-center gap-3 hover:bg-stone-800 rounded-lg p-2 text-xs font-semibold text-stone-200 transition text-left cursor-pointer"
-                          >
-                            <div className={`p-1.5 rounded-lg ${opt.color}`}>
-                              <Icon className="w-4 h-4" />
-                            </div>
-                            <span>{opt.label}</span>
-                          </button>
-                        );
-                      })}
-                      <div className="border-t border-stone-800 my-1.5" />
-                      {auxiliaryOptions.map((opt) => {
-                        const Icon = opt.icon;
-                        return (
-                          <button
-                            key={opt.id}
-                            id={`portal-dropdown-opt-${opt.id}`}
-                            onClick={() => {
-                              setRoute(opt.id);
-                              setShowPortalMenu(false);
-                            }}
-                            className="w-full flex items-center gap-3 hover:bg-stone-800 rounded-lg p-2 text-xs font-semibold text-stone-400 hover:text-white transition text-left cursor-pointer"
-                          >
-                            <Icon className="w-4 h-4 text-stone-500" />
-                            <span>{opt.label}</span>
-                          </button>
-                        );
-                      })}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
             </nav>
 
             {/* Utility buttons (Lang switcher, dark/light toggle, Contact, Join CTA) */}
@@ -181,11 +121,8 @@ export default function Header({
               <div className="relative">
                 <button
                   id="lang-switcher-dropdown-trigger"
-                  onClick={() => {
-                    setShowLangMenu(!showLangMenu);
-                    setShowPortalMenu(false);
-                  }}
-                  className="rounded-lg border border-stone-800 hover:bg-stone-800 px-3 py-1.5 text-xs font-semibold text-stone-300 hover:text-white transition flex items-center gap-1.5 cursor-pointer"
+                  onClick={() => setShowLangMenu(!showLangMenu)}
+                  className="rounded-lg border border-stone-850 hover:bg-stone-850 px-3 py-1.5 text-xs font-semibold text-stone-300 hover:text-white transition flex items-center gap-1.5 cursor-pointer"
                 >
                   <Globe className="w-3.5 h-3.5" />
                   <span className="uppercase">{lang}</span>
@@ -227,7 +164,7 @@ export default function Header({
               <button
                 id="theme-toggle-btn"
                 onClick={() => setDarkMode(!darkMode)}
-                className="rounded-lg p-2 border border-stone-800 hover:bg-stone-800 transition text-stone-300 hover:text-white cursor-pointer"
+                className="rounded-lg p-2 border border-stone-850 hover:bg-stone-850 transition text-stone-300 hover:text-white cursor-pointer"
                 title="Toggle visual theme"
               >
                 {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-stone-300" />}
@@ -306,8 +243,8 @@ export default function Header({
               className="fixed top-0 right-0 bottom-0 w-full max-w-xs bg-stone-900 p-6 shadow-2xl flex flex-col overflow-y-auto justify-between"
             >
               <div className="space-y-6">
-                <div className="flex items-center justify-between pb-4 border-b border-stone-800">
-                  <span className="font-display font-bold text-sm text-amber-400 uppercase tracking-widest">{t.brandName}</span>
+                <div className="flex items-center justify-between pb-4 border-b border-stone-850">
+                  <span className="font-display font-bold text-sm text-amber-400 uppercase tracking-widest">Baro Quran Academy</span>
                   <button
                     id="mobile-drawer-close-btn"
                     onClick={() => setIsOpen(false)}
@@ -323,8 +260,12 @@ export default function Header({
                       key={link.id}
                       id={`mobile-drawer-link-${link.id}`}
                       onClick={() => {
-                        setRoute(link.id);
                         setIsOpen(false);
+                        if (link.id === "free-trial") {
+                          onJoinClick();
+                        } else {
+                          setRoute(link.id);
+                        }
                       }}
                       className="flex items-center justify-between py-2 px-3 rounded-xl font-sans text-xs font-semibold text-stone-200 hover:bg-stone-800 hover:text-white transition text-left"
                     >
@@ -332,50 +273,13 @@ export default function Header({
                       <ChevronRight className="w-3.5 h-3.5 text-stone-500" />
                     </button>
                   ))}
-
-                  <div className="border-t border-stone-800 my-2" />
-
-                  {/* Portals Section */}
-                  <span className="text-[10px] text-stone-500 font-bold uppercase tracking-wider px-3">Portals</span>
-                  {portalOptions.map((opt) => (
-                    <button
-                      key={opt.id}
-                      id={`mobile-drawer-link-${opt.id}`}
-                      onClick={() => {
-                        setRoute(opt.id);
-                        setIsOpen(false);
-                      }}
-                      className="flex items-center justify-between py-2 px-3 rounded-xl font-sans text-xs font-semibold text-stone-200 hover:bg-stone-800 transition text-left"
-                    >
-                      <span>{opt.label}</span>
-                      <ChevronRight className="w-3.5 h-3.5 text-stone-500" />
-                    </button>
-                  ))}
-
-                  <div className="border-t border-stone-800 my-2" />
-
-                  {/* Auxiliary Section */}
-                  {auxiliaryOptions.map((opt) => (
-                    <button
-                      key={opt.id}
-                      id={`mobile-drawer-link-${opt.id}`}
-                      onClick={() => {
-                        setRoute(opt.id);
-                        setIsOpen(false);
-                      }}
-                      className="flex items-center justify-between py-2 px-3 rounded-xl font-sans text-xs font-semibold text-stone-400 hover:text-white transition text-left"
-                    >
-                      <span>{opt.label}</span>
-                      <ChevronRight className="w-3.5 h-3.5 text-stone-500" />
-                    </button>
-                  ))}
                 </nav>
               </div>
 
-              <div className="space-y-4 pt-6 border-t border-stone-800 mt-6">
+              <div className="space-y-4 pt-6 border-t border-stone-850 mt-6">
                 <a
                   href="tel:+251999451777"
-                  className="flex items-center gap-2 justify-center py-2.5 rounded-xl border border-stone-800 text-xs font-semibold text-stone-300 hover:bg-stone-800 transition"
+                  className="flex items-center gap-2 justify-center py-2.5 rounded-xl border border-stone-850 text-xs font-semibold text-stone-300 hover:bg-stone-850 transition"
                 >
                   <Phone className="w-4 h-4 text-emerald-400" />
                   <span>+251 999 451 777</span>

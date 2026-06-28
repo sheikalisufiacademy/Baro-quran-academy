@@ -1,8 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, CheckCircle, User, Mail, Phone, BookOpen, Clock, Sparkles } from "lucide-react";
+import {
+  X,
+  CheckCircle,
+  User,
+  Mail,
+  Phone,
+  BookOpen,
+  Clock,
+  Sparkles,
+  MapPin,
+  Globe,
+  DollarSign,
+  Plus,
+  Trash2,
+  Users,
+  MessageSquare,
+  Loader2,
+  MailWarning
+} from "lucide-react";
 import { COURSES } from "../data";
 import { Registration } from "../types";
+import { sendGmailMessage } from "../lib/gmailService";
+import { collection, addDoc, doc, getDoc } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 interface RegistrationModalProps {
   isOpen: boolean;
@@ -11,34 +32,159 @@ interface RegistrationModalProps {
   selectedCourseId?: string;
 }
 
+const COUNTRIES = [
+  "Somalia",
+  "Somaliland",
+  "United Kingdom",
+  "United States",
+  "Canada",
+  "Sweden",
+  "Norway",
+  "Finland",
+  "Germany",
+  "Kenya",
+  "Ethiopia",
+  "Djibouti",
+  "Saudi Arabia",
+  "UAE",
+  "Qatar",
+  "Egypt",
+  "Turkey",
+  "Wadan Kale (Specify...)"
+];
+
 export default function RegistrationModal({
   isOpen,
   onClose,
   onSubmit,
-  selectedCourseId = "tajweed",
+  selectedCourseId = "higaada",
 }: RegistrationModalProps) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [country, setCountry] = useState("");
+  const [customCountry, setCustomCountry] = useState("");
+  const [city, setCity] = useState("");
   const [course, setCourse] = useState(selectedCourseId);
   const [level, setLevel] = useState("Bilaabo (Beginner)");
-  const [preferredTime, setPreferredTime] = useState("Subax (Morning)");
+  const [studyDays, setStudyDays] = useState<number>(3); // Default to 3 days/week
+  const [paymentPlan, setPaymentPlan] = useState(""); 
   const [notes, setNotes] = useState("");
+  
+  // Single vs Multiple Students
+  const [studentType, setStudentType] = useState<"single" | "multiple">("single");
+  const [studentCount, setStudentCount] = useState("1");
+  // Extra students list (dynamic inputs)
+  const [extraStudents, setExtraStudents] = useState<string[]>([]);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSuccess, setIsSuccess] = useState(false);
   const [generatedId, setGeneratedId] = useState("");
+  
+  // Gmail dispatch indicators
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<{ success: boolean; message: string } | null>(null);
+
+  // Dynamic Pricing Helpers
+  const studentTotalCount = studentType === "single" ? 1 : extraStudents.length + 1;
+
+  const getCalculatedPrice = (days: number, count: number): number => {
+    if (count === 1) {
+      if (days === 2) return 20;
+      if (days === 3) return 25;
+      if (days === 4) return 30;
+      if (days === 5) return 45;
+    } else if (count === 2) {
+      if (days === 2) return 35;
+      if (days === 3) return 45;
+      if (days === 4) return 55;
+      if (days === 5) return 80;
+    } else if (count === 3) {
+      if (days === 2) return 50; // exact user request: 3 students, 2 days = $50
+      if (days === 3) return 60;
+      if (days === 4) return 75;
+      if (days === 5) return 115;
+    } else if (count === 4) {
+      if (days === 2) return 65;
+      if (days === 3) return 80;
+      if (days === 4) return 100;
+      if (days === 5) return 150;
+    } else { // 5 or more
+      const baseSingle = days === 2 ? 20 : days === 3 ? 25 : days === 4 ? 30 : 45;
+      const rawTotal = baseSingle * count;
+      return Math.round(rawTotal * 0.75); // 25% discount
+    }
+    return 0;
+  };
+
+  const getStandardPrice = (days: number, count: number): number => {
+    const baseSingle = days === 2 ? 20 : days === 3 ? 25 : days === 4 ? 30 : 45;
+    return baseSingle * count;
+  };
+
+  // Sync Payment Plan selection state string
+  useEffect(() => {
+    const currentPrice = getCalculatedPrice(studyDays, studentTotalCount);
+    const standardPrice = getStandardPrice(studyDays, studentTotalCount);
+    const saving = standardPrice - currentPrice;
+    
+    let planString = `$${currentPrice}/Month (${studyDays} Days/Week)`;
+    if (studentTotalCount > 1) {
+      planString += ` [${studentTotalCount} Students - Family Discount Applied]`;
+      if (saving > 0) {
+        planString += ` (Saves $${saving})`;
+      }
+    }
+    setPaymentPlan(planString);
+  }, [studyDays, studentType, extraStudents.length]);
+
+  // Keep course sync'd
+  useEffect(() => {
+    if (selectedCourseId) {
+      setCourse(selectedCourseId);
+    }
+  }, [selectedCourseId]);
 
   const validateStep1 = () => {
     const errs: Record<string, string> = {};
     if (!name.trim()) errs.name = "Fadlan qor magacaaga oo buuxa.";
+    if (!country.trim()) {
+      errs.country = "Fadlan dooro wadanka aad joogto.";
+    } else if (country === "Wadan Kale (Specify...)" && !customCountry.trim()) {
+      errs.country = "Fadlan qor magaca wadankaaga.";
+    }
+    if (!city.trim()) errs.city = "Fadlan qor magaalada aad degan tahay.";
+    if (!email.trim()) {
+      errs.email = "Fadlan qor Gmail-kaaga si lagugu soo diro fariin diiwaan-gelin.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errs.email = "Fadlan qor email sax ah.";
+    }
     if (!phone.trim()) {
-      errs.phone = "Fadlan geli lambarkaaga taleefanka/WhatsApp.";
+      errs.phone = "Fadlan qor lambarkaaga WhatsApp.";
     } else if (phone.trim().length < 6) {
-      errs.phone = "Fadlan geli lambar taleefan oo sax ah.";
+      errs.phone = "Fadlan geli lambar WhatsApp oo sax ah.";
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
+  };
+
+  const handleStudentCountChange = (count: string) => {
+    setStudentCount(count);
+    if (count === "1") {
+      setStudentType("single");
+      setExtraStudents([]);
+    } else {
+      setStudentType("multiple");
+      let numExtra = 1;
+      if (count === "2") numExtra = 1;
+      else if (count === "3") numExtra = 2;
+      else if (count === "4") numExtra = 3;
+      else if (count === "5+") numExtra = 4;
+      
+      const newExtra = Array(numExtra).fill("");
+      setExtraStudents(newExtra);
+    }
   };
 
   const handleNext = () => {
@@ -47,12 +193,38 @@ export default function RegistrationModal({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleAddStudentField = () => {
+    setExtraStudents([...extraStudents, ""]);
+  };
+
+  const handleRemoveStudentField = (index: number) => {
+    const list = [...extraStudents];
+    list.splice(index, 1);
+    setExtraStudents(list);
+  };
+
+  const handleExtraStudentChange = (index: number, val: string) => {
+    const list = [...extraStudents];
+    list[index] = val;
+    setExtraStudents(list);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep1()) {
       setStep(1);
       return;
     }
+
+    // Filter out blank student names if multiple selected
+    const validExtraNames = studentType === "multiple" 
+      ? extraStudents.filter(n => n.trim() !== "")
+      : [];
+
+    const studentId = "BQA-" + Math.floor(100000 + Math.random() * 900000);
+    setGeneratedId(studentId);
+
+    const finalCountry = country === "Wadan Kale (Specify...)" ? customCountry : country;
 
     const newReg: Registration = {
       name,
@@ -60,16 +232,224 @@ export default function RegistrationModal({
       phone,
       course,
       level,
-      preferredTime,
+      preferredTime: "Doortay Qorshe", // backwards compatibility
       notes,
+      country: finalCountry,
+      city,
+      whatsapp: phone,
+      paymentPlan,
+      studentType,
+      additionalStudents: validExtraNames,
+      generatedId: studentId
     };
 
-    // Generate random student ID
-    const studentId = "BQA-" + Math.floor(100000 + Math.random() * 900000);
-    setGeneratedId(studentId);
-
+    // Save registration locally
     onSubmit(newReg);
     setIsSuccess(true);
+    setEmailStatus(null);
+
+    // Save registration to Firestore so the admin can see it in real-time from anywhere!
+    try {
+      const registrationsCol = collection(db, "registrations");
+      await addDoc(registrationsCol, {
+        ...newReg,
+        createdAt: new Date().toISOString()
+      });
+      console.log("Registration saved to Firestore successfully.");
+    } catch (fsErr) {
+      console.error("Failed to save to Firestore, trying local fallback:", fsErr);
+    }
+
+    // Automating Gmail Dispatch utilizing the admin's connected workspace token from Firestore
+    let activeToken = localStorage.getItem("gmail_access_token");
+    let activeAdminEmail = localStorage.getItem("gmail_user_email") || "baroquranacademy1@gmail.com";
+
+    try {
+      const configDoc = await getDoc(doc(db, "config", "gmail_auth"));
+      if (configDoc.exists()) {
+        const configData = configDoc.data();
+        if (configData.accessToken) {
+          activeToken = configData.accessToken;
+        }
+        if (configData.adminEmail) {
+          activeAdminEmail = configData.adminEmail;
+        }
+      }
+    } catch (configErr) {
+      console.warn("Failed to retrieve admin token from Firestore config, using fallback:", configErr);
+    }
+    
+    if (activeToken) {
+      setSendingEmail(true);
+      try {
+        const selectedCourseTitle = COURSES.find((c) => c.id === course)?.title || course;
+        
+        // 1. Send beautifully formatted Somali confirmation email to the student
+        const studentSubject = `Hambalyo! Is-diiwaan gelintaada Baro Quran Academy waa guul ✅`;
+        const studentBody = `
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; color: #1e293b;">
+            <div style="background-color: #065f46; padding: 24px; text-align: center; color: #ffffff;">
+              <h2 style="margin: 0; font-size: 24px; font-weight: bold;">Baro Quran Academy</h2>
+              <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Hoyga Barashada Diinteena Suuban</p>
+            </div>
+            <div style="padding: 32px 24px; text-align: left;">
+              <h3 style="margin-top: 0; color: #0f172a; font-size: 18px;">Ku soo dhowow Akadeemiyada, ${name}!</h3>
+              <p style="font-size: 14px; line-height: 1.6; color: #334155;">
+                Assalamu Alaikum Warahmatullahi Wabarakatuh,<br/><br/>
+                Kusoo dhowow akadeemiyada, <strong>${name}</strong>, waad ku guulaysatay isdiwaan galintaada baro quran academy. Wax ka yar 6 saac teamkeena ayaa kula soo xidhiidhi doona WhatsApp-kaaga <strong>${phone}</strong> si loo dhammaystiro jadwalkaaga. Mahadsanid, kusoo dhawoow mar kale baro quran academy, hoyga barashada diinteena suuban.
+              </p>
+              
+              <div style="margin: 24px 0; padding: 18px; background-color: #f8fafc; border-left: 4px solid #10b981; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #065f46; font-weight: bold;">Faahfaahinta Diiwaan-gelintaada:</h4>
+                <table style="width: 100%; font-size: 13px; border-collapse: collapse; line-height: 1.8;">
+                  <tr>
+                    <td style="color: #64748b; width: 140px;"><strong>Ardayga ID:</strong></td>
+                    <td style="color: #1e293b; font-family: monospace; font-weight: bold;">${studentId}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b;"><strong>Koorsada:</strong></td>
+                    <td style="color: #1e293b; font-weight: 500;">${selectedCourseTitle}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b;"><strong>Heerka:</strong></td>
+                    <td style="color: #1e293b;">${level}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b;"><strong>Wadanka/Magaalada:</strong></td>
+                    <td style="color: #1e293b;">${finalCountry}, ${city}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b;"><strong>Qorshaha Dooran:</strong></td>
+                    <td style="color: #1e293b; font-weight: bold; color: #065f46;">${paymentPlan}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #64748b;"><strong>Nooca Diiwaan-gelinta:</strong></td>
+                    <td style="color: #1e293b;">${studentType === "multiple" ? "Ka badan 1 arday" : "Hal arday"}</td>
+                  </tr>
+                  ${validExtraNames.length > 0 ? `
+                  <tr>
+                    <td style="color: #64748b; vertical-align: top;"><strong>Ardayda kale:</strong></td>
+                    <td style="color: #1e293b;">${validExtraNames.join(", ")}</td>
+                  </tr>
+                  ` : ""}
+                </table>
+              </div>
+              
+              <p style="font-size: 12px; color: #64748b; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+                Haddii aad qabto wax su'aalo ah oo degdeg ah, fadlan nagala soo xiriir WhatsApp-ka rasmiga ah ee Akadeemiyada.
+              </p>
+            </div>
+            <div style="background-color: #f1f5f9; padding: 16px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
+              &copy; 2026 Baro Quran Academy. All rights reserved.
+            </div>
+          </div>
+        `;
+
+        await sendGmailMessage(activeToken, email, studentSubject, studentBody);
+
+        // 2. Send detailed notification email to the administrator (owner)
+        const adminSubject = `Diiwaan-gelin Cusub: ${name} (${finalCountry}) 📝`;
+        const adminBody = `
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; color: #1e293b;">
+            <div style="background-color: #0f172a; padding: 24px; text-align: center; color: #ffffff;">
+              <h2 style="margin: 0; font-size: 20px; font-weight: bold;">Xogta Qofka Is Diiwaan Galiyay 📝</h2>
+              <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.8;">Baro Quran Academy Platform</p>
+            </div>
+            <div style="padding: 24px; text-align: left;">
+              <p style="font-size: 14px; color: #334155; margin-top: 0;">
+                Assalamu Alaikum Warahmatullahi Wabarakatuh,<br/><br/>
+                Waxaa jirtid diiwaan-gelin cusub oo laga soo buuxiyey mareegta. Halkaan ka eeg faahfaahinta dhammaystiran ee ardayga:
+              </p>
+              
+              <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin: 20px 0; border: 1px solid #f1f5f9; line-height: 1.8;">
+                <tr style="background-color: #f8fafc;">
+                  <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left; width: 160px; font-weight: bold; color: #475569;">Garoonka (Field)</th>
+                  <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left; font-weight: bold; color: #475569;">Xogta (Value)</th>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; color: #475569;">Ardayga ID:</td>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; color: #1e293b; font-family: monospace; font-weight: bold;">${studentId}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; color: #475569;">Magaca Buuxa:</td>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; color: #1e293b; font-weight: bold;">${name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; color: #475569;">Wadanka:</td>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; color: #1e293b;">${finalCountry}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; color: #475569;">Magaalada:</td>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; color: #1e293b;">${city}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; color: #475569;">Email-ka (Gmail):</td>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; color: #4285F4; font-weight: 500;">${email}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; color: #475569;">WhatsApp Number:</td>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; color: #16a34a; font-weight: bold;">${phone}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; color: #475569;">Koorsada Doortay:</td>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; color: #065f46; font-weight: bold;">${selectedCourseTitle}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; color: #475569;">Heerka Aqooneed:</td>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; color: #1e293b;">${level}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; color: #475569;">Qorshaha Lacagta:</td>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; color: #b45309; font-weight: bold;">${paymentPlan}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; color: #475569;">Nooca Ardayda:</td>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; color: #1e293b;">${studentType === "multiple" ? "Arday badan" : "Hal arday oo kaliya"}</td>
+                </tr>
+                ${validExtraNames.length > 0 ? `
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; color: #475569; vertical-align: top;">Magacyada kale:</td>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; color: #1e293b; font-size: 12.5px;">
+                    <ol style="margin: 0; padding-left: 15px;">
+                      ${validExtraNames.map((n, i) => `<li>Magaca ${i+2}aad: <strong>${n}</strong></li>`).join("")}
+                    </ol>
+                  </td>
+                </tr>
+                ` : ""}
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; color: #475569; vertical-align: top;">Fariin / notes:</td>
+                  <td style="padding: 10px; border: 1px solid #e2e8f0; color: #475569; font-style: italic;">${notes || "Wax fariin ah lagama reebin."}</td>
+                </tr>
+              </table>
+
+              <p style="font-size: 11px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+                Fariintaan waxaa si toos ah u dirtay mareegta adoo isticmaalaya xiriirka Gmail API.
+              </p>
+            </div>
+          </div>
+        `;
+
+        await sendGmailMessage(activeToken, activeAdminEmail, adminSubject, adminBody);
+        setEmailStatus({
+          success: true,
+          message: "Emails-kii waa la diray! Adiga iyo Ardaygaba fariinta Gmail-ka si guul leh ayaad u hesheen."
+        });
+      } catch (err: any) {
+        console.error("Auto Gmail dispatch failed:", err);
+        setEmailStatus({
+          success: false,
+          message: "Is-diiwaan gelintu waa guul, laakiin cilad ayaa ku timid dirista Gmail-ka. Fadlan xiriirka WhatsApp-ka isticmaal."
+        });
+      } finally {
+        setSendingEmail(false);
+      }
+    } else {
+      // No active session token
+      setEmailStatus({
+        success: false,
+        message: "Ogeysiis: Si toos ah fariin looma dirin madaama Gmail-ka aan lagu xirin app-ka ee dashboard-ka Gmail-ka."
+      });
+    }
   };
 
   const resetForm = () => {
@@ -77,12 +457,19 @@ export default function RegistrationModal({
     setName("");
     setEmail("");
     setPhone("");
+    setCountry("");
+    setCustomCountry("");
+    setCity("");
     setCourse(selectedCourseId);
     setLevel("Bilaabo (Beginner)");
-    setPreferredTime("Subax (Morning)");
+    setStudyDays(3);
+    setStudentType("single");
+    setStudentCount("1");
+    setExtraStudents([]);
     setNotes("");
     setErrors({});
     setIsSuccess(false);
+    setEmailStatus(null);
   };
 
   const handleClose = () => {
@@ -90,15 +477,30 @@ export default function RegistrationModal({
     onClose();
   };
 
-  // WhatsApp contact helper
   const getWhatsAppLink = () => {
     const selectedCourseTitle = COURSES.find((c) => c.id === course)?.title || course;
-    const text = `Assalamu Alaykum Baro Quran Academy. Waxaan iska diiwaan-geliyey mareegtiinna. 
-ID-gayga waa: ${generatedId}
-Magacayga: ${name}
-Koorsada: ${selectedCourseTitle}
-Heerka: ${level}
-Waqtiga aan doorbidayo: ${preferredTime}`;
+    const extraNames = studentType === "multiple" 
+      ? extraStudents.filter(n => n.trim() !== "")
+      : [];
+    
+    const finalCountry = country === "Wadan Kale (Specify...)" ? customCountry : country;
+    
+    let text = `Assalamu Alaykum Baro Quran Academy. Waxaan iska diiwaan-geliyey mareegta dhowaan.
+*ID-gayga:* ${generatedId}
+*Magacayga:* ${name}
+*Koorsada:* ${selectedCourseTitle}
+*Heerka:* ${level}
+*Wadanka/Magaalada:* ${finalCountry}, ${city}
+*Qorshaha Lacagta:* ${paymentPlan}
+*Tirada Ardayda:* ${studentType === "multiple" ? `Ka badan (Wadajir u diiwaan galay: ${extraNames.length + 1} arday)` : "Hal arday"}`;
+
+    if (extraNames.length > 0) {
+      text += `\n*Magacyada kale:* ${extraNames.join(", ")}`;
+    }
+    if (notes.trim()) {
+      text += `\n*Fariin dheeraad ah:* ${notes}`;
+    }
+
     return `https://wa.me/251999451777?text=${encodeURIComponent(text)}`;
   };
 
@@ -121,44 +523,49 @@ Waqtiga aan doorbidayo: ${preferredTime}`;
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
             transition={{ type: "spring", duration: 0.5 }}
-            className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-stone-100"
+            className="relative z-10 w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-stone-100 flex flex-col max-h-[90vh]"
             id="registration-modal-content"
           >
-            {/* Top gold bar banner */}
-            <div className="h-2 bg-gradient-to-r from-emerald-700 via-amber-500 to-emerald-800" />
+            {/* Top green/gold/teal accent line */}
+            <div className="h-2 bg-gradient-to-r from-emerald-800 via-amber-500 to-emerald-900 shrink-0" />
 
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-stone-100">
-              <h3 className="font-display text-xl font-bold text-stone-900 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-amber-500 animate-pulse" />
-                {isSuccess ? "Diiwaan-gelintu Waa Guul" : "Ku Biir Academy-ga"}
-              </h3>
+            <div className="flex items-center justify-between p-5 border-b border-stone-100 shrink-0">
+              <div className="text-left">
+                <h3 className="font-display text-lg sm:text-xl font-bold text-stone-900 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-amber-500 animate-pulse" />
+                  {isSuccess ? "Diiwaan-gelintaadu Waa Guul!" : "Xogta Diiwaan-gelinta Ardayga"}
+                </h3>
+                <p className="text-[11px] text-stone-500 font-sans mt-0.5">
+                  {isSuccess ? "Card-ka diiwaan-gelinta rasmiga ah" : "Buuxi foomka si toos ahna lagugu soo xiriiro"}
+                </p>
+              </div>
               <button
                 id="close-modal-btn"
                 onClick={handleClose}
-                className="rounded-full p-1.5 text-stone-400 hover:bg-stone-50 hover:text-stone-700 transition"
+                className="rounded-full p-2 text-stone-400 hover:bg-stone-50 hover:text-stone-700 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Content */}
-            <div className="p-6">
+            {/* Content Scroll Area */}
+            <div className="p-6 overflow-y-auto flex-1">
               {!isSuccess ? (
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  {/* Progress Indicator */}
+                <form onSubmit={handleSubmit} className="space-y-6 text-left">
+                  {/* Step Banner Progress */}
                   <div className="flex items-center justify-between text-xs text-stone-500 pb-2">
-                    <span className={step === 1 ? "font-bold text-emerald-800" : ""}>
-                      1. Macluumaadkaaga
+                    <span className={`font-semibold ${step === 1 ? "text-emerald-800 font-bold" : "text-stone-400"}`}>
+                      1. Macluumaadka Shaqsiga
                     </span>
                     <div className="h-1 flex-1 mx-4 bg-stone-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-emerald-700 transition-all duration-300"
+                        className="h-full bg-emerald-800 transition-all duration-300"
                         style={{ width: step === 1 ? "50%" : "100%" }}
                       />
                     </div>
-                    <span className={step === 2 ? "font-bold text-emerald-800" : ""}>
-                      2. Doorashada Koorsada
+                    <span className={`font-semibold ${step === 2 ? "text-emerald-800 font-bold" : "text-stone-400"}`}>
+                      2. Casharada & Tirada Ardayda
                     </span>
                   </div>
 
@@ -170,20 +577,21 @@ Waqtiga aan doorbidayo: ${preferredTime}`;
                     >
                       {/* Name */}
                       <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1 flex items-center gap-1.5">
-                          <User className="w-4 h-4 text-stone-400" />
-                          Magacaaga oo Buuxa <span className="text-red-500">*</span>
+                        <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                          <User className="w-4 h-4 text-emerald-800" />
+                          Magacaaga oo Buuxa (Full Name) <span className="text-red-500">*</span>
                         </label>
                         <input
                           id="student-name-input"
                           type="text"
+                          required
                           value={name}
                           onChange={(e) => {
                             setName(e.target.value);
                             if (errors.name) setErrors({ ...errors, name: "" });
                           }}
-                          placeholder="Tusaale: Axmed Maxamed Cumar"
-                          className={`w-full rounded-lg border p-3 text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 ${
+                          placeholder="Tusaale: Axmed Maxamed Caleeli"
+                          className={`w-full rounded-xl border p-3 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 ${
                             errors.name
                               ? "border-red-300 focus:ring-red-500/20"
                               : "border-stone-200 focus:ring-emerald-700/20 focus:border-emerald-700"
@@ -194,22 +602,237 @@ Waqtiga aan doorbidayo: ${preferredTime}`;
                         )}
                       </div>
 
-                      {/* Phone / WhatsApp */}
+                      {/* Options for 1 person vs multiple, shown right after entering the name */}
+                      <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/60 space-y-3">
+                        <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider flex items-center gap-1.5">
+                          <Users className="w-4 h-4 text-emerald-800" />
+                          Yaa is diwaangelinaya? (Who is registering?) <span className="text-red-500">*</span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setStudentType("single");
+                              setStudentCount("1");
+                              setExtraStudents([]);
+                            }}
+                            className={`rounded-xl border p-3 text-xs font-bold text-center transition flex flex-col items-center justify-center gap-1.5 cursor-pointer ${
+                              studentType === "single"
+                                ? "border-emerald-700 bg-white text-emerald-800 ring-2 ring-emerald-700/10"
+                                : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                            }`}
+                          >
+                            <span className="text-xs">Kaligay (1 Qof)</span>
+                            <span className="text-[10px] text-stone-400 font-normal">Myself only</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setStudentType("multiple");
+                              if (studentCount === "1") {
+                                setStudentCount("2");
+                                setExtraStudents([""]);
+                              }
+                            }}
+                            className={`rounded-xl border p-3 text-xs font-bold text-center transition flex flex-col items-center justify-center gap-1.5 cursor-pointer ${
+                              studentType === "multiple"
+                                ? "border-emerald-700 bg-white text-emerald-800 ring-2 ring-emerald-700/10"
+                                : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                            }`}
+                          >
+                            <span>Aniga iyo Walaalahay / Dad kale</span>
+                            <span className="text-[10px] text-stone-400 font-normal">More than 1 student</span>
+                          </button>
+                        </div>
+
+                        {/* If Multiple is selected, show dropdown to choose count and sibling input fields */}
+                        {studentType === "multiple" && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            className="pt-2 space-y-3"
+                          >
+                            <div>
+                              <label className="block text-[11px] font-semibold text-stone-600 mb-1.5">
+                                Dooro Tirada wadajir isu diwaangelinaysa (Total Students):
+                              </label>
+                              <select
+                                id="student-count-select-step1"
+                                value={studentCount}
+                                onChange={(e) => handleStudentCountChange(e.target.value)}
+                                className="w-full rounded-xl border border-stone-200 p-2.5 bg-white text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-700/20"
+                              >
+                                <option value="2">2 Arday</option>
+                                <option value="3">3 Arday</option>
+                                <option value="4">4 Arday</option>
+                                <option value="5+">5+ Arday (Qoys / Koox)</option>
+                              </select>
+                            </div>
+
+                            <div className="bg-white border border-stone-200/60 rounded-xl p-3 space-y-2">
+                              <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block">
+                                Qor magacyada walaalaha ama ardayda kale:
+                              </span>
+                              <div className="space-y-2">
+                                {extraStudents.map((studentName, idx) => (
+                                  <div key={idx} className="flex items-center gap-2">
+                                    <span className="text-[11px] font-bold text-stone-500 shrink-0">
+                                      Ardayga {idx + 2}aad:
+                                    </span>
+                                    <input
+                                      type="text"
+                                      value={studentName}
+                                      onChange={(e) => handleExtraStudentChange(idx, e.target.value)}
+                                      placeholder={`Magaca buuxa ee walaalka ama ardayga ${idx + 2}aad`}
+                                      className="flex-1 rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1.5 text-xs text-stone-900 focus:outline-none focus:bg-white focus:border-emerald-700"
+                                    />
+                                    {extraStudents.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveStudentField(idx)}
+                                        className="p-1 text-red-500 hover:bg-red-50 rounded transition cursor-pointer"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleAddStudentField}
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 hover:text-emerald-700 pt-1 cursor-pointer"
+                              >
+                                <Plus className="w-3 h-3" />
+                                <span>Kudar Arday Kale [+]</span>
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </div>
+
+                      {/* Country & City Row */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                            <Globe className="w-4 h-4 text-emerald-800" />
+                            Wadanka (Country) <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            id="student-country-select"
+                            required
+                            value={country}
+                            onChange={(e) => {
+                              setCountry(e.target.value);
+                              if (errors.country) setErrors({ ...errors, country: "" });
+                            }}
+                            className={`w-full rounded-xl border p-3 bg-white text-xs text-stone-900 focus:outline-none focus:ring-2 ${
+                              errors.country
+                                ? "border-red-300 focus:ring-red-500/20"
+                                : "border-stone-200 focus:ring-emerald-700/20 focus:border-emerald-700"
+                            }`}
+                          >
+                            <option value="">-- Dooro Wadanka --</option>
+                            {COUNTRIES.map((cty) => (
+                              <option key={cty} value={cty}>
+                                {cty}
+                              </option>
+                            ))}
+                          </select>
+                          {errors.country && (
+                            <p className="mt-1 text-xs text-red-500">{errors.country}</p>
+                          )}
+
+                          {country === "Wadan Kale (Specify...)" && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="mt-2"
+                            >
+                              <input
+                                id="student-custom-country-input"
+                                type="text"
+                                required
+                                value={customCountry}
+                                onChange={(e) => setCustomCountry(e.target.value)}
+                                placeholder="Qor wadanka kale ee aad joogto"
+                                className="w-full rounded-xl border border-stone-200 p-3 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
+                              />
+                            </motion.div>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                            <MapPin className="w-4 h-4 text-emerald-800" />
+                            Magaalada (City) <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            id="student-city-input"
+                            type="text"
+                            required
+                            value={city}
+                            onChange={(e) => {
+                              setCity(e.target.value);
+                              if (errors.city) setErrors({ ...errors, city: "" });
+                            }}
+                            placeholder="Tusaale: Hargeisa, Muqdisho ama London"
+                            className={`w-full rounded-xl border p-3 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 ${
+                              errors.city
+                                ? "border-red-300 focus:ring-red-500/20"
+                                : "border-stone-200 focus:ring-emerald-700/20 focus:border-emerald-700"
+                            }`}
+                          />
+                          {errors.city && (
+                            <p className="mt-1 text-xs text-red-500">{errors.city}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Email Address */}
                       <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1 flex items-center gap-1.5">
-                          <Phone className="w-4 h-4 text-stone-400" />
-                          Taleefankaaga / WhatsApp <span className="text-red-500">*</span>
+                        <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                          <Mail className="w-4 h-4 text-emerald-800" />
+                          Email (Gmail) si toos ah fariintu kuugu dhacdo <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="student-email-input"
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => {
+                            setEmail(e.target.value);
+                            if (errors.email) setErrors({ ...errors, email: "" });
+                          }}
+                          placeholder="Tusaale: ahmed11@gmail.com"
+                          className={`w-full rounded-xl border p-3 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 ${
+                            errors.email
+                              ? "border-red-300 focus:ring-red-500/20"
+                              : "border-stone-200 focus:ring-emerald-700/20 focus:border-emerald-700"
+                          }`}
+                        />
+                        {errors.email && (
+                          <p className="mt-1 text-xs text-red-500">{errors.email}</p>
+                        )}
+                      </div>
+
+                      {/* WhatsApp / Phone Number */}
+                      <div>
+                        <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                          <Phone className="w-4 h-4 text-emerald-800" />
+                          Lambarka WhatsApp <span className="text-red-500">*</span>
                         </label>
                         <input
                           id="student-phone-input"
                           type="tel"
+                          required
                           value={phone}
                           onChange={(e) => {
                             setPhone(e.target.value);
                             if (errors.phone) setErrors({ ...errors, phone: "" });
                           }}
-                          placeholder="Tusaale: +25261xxxxxxx ama +251999451777"
-                          className={`w-full rounded-lg border p-3 text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 ${
+                          placeholder="Tusaale: +25261xxxxxxx ama +447xxxxxxx"
+                          className={`w-full rounded-xl border p-3 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 ${
                             errors.phone
                               ? "border-red-300 focus:ring-red-500/20"
                               : "border-stone-200 focus:ring-emerald-700/20 focus:border-emerald-700"
@@ -218,22 +841,6 @@ Waqtiga aan doorbidayo: ${preferredTime}`;
                         {errors.phone && (
                           <p className="mt-1 text-xs text-red-500">{errors.phone}</p>
                         )}
-                      </div>
-
-                      {/* Email */}
-                      <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1 flex items-center gap-1.5">
-                          <Mail className="w-4 h-4 text-stone-400" />
-                          Email (Haddii uu jiro)
-                        </label>
-                        <input
-                          id="student-email-input"
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="Tusaale: axmed@gmail.com"
-                          className="w-full rounded-lg border border-stone-200 p-3 text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
-                        />
                       </div>
                     </motion.div>
                   ) : (
@@ -244,30 +851,28 @@ Waqtiga aan doorbidayo: ${preferredTime}`;
                     >
                       {/* Course */}
                       <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1 flex items-center gap-1.5">
-                          <BookOpen className="w-4 h-4 text-stone-400" />
-                          Dooro Koorsada <span className="text-red-500">*</span>
+                        <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                          <BookOpen className="w-4 h-4 text-emerald-800" />
+                          Casharka qaybtuu rabo (Select Course) <span className="text-red-500">*</span>
                         </label>
                         <select
                           id="student-course-select"
                           value={course}
                           onChange={(e) => setCourse(e.target.value)}
-                          className="w-full rounded-lg border border-stone-200 p-3 bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
+                          className="w-full rounded-xl border border-stone-200 p-3 bg-white text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
                         >
                           {COURSES.map((c) => (
                             <option key={c.id} value={c.id}>
-                              {c.title} ({c.subTitle})
+                              {c.title}
                             </option>
                           ))}
-                          <option value="hadith">Hadith (Barashada Xadiiska)</option>
-                          <option value="quran_memo">Quran (Hifdiga Qur'aanka)</option>
                         </select>
                       </div>
 
                       {/* Level */}
                       <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">
-                          Heerkaaga Aqooneed ee Koorsadan
+                        <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5">
+                          Heerkaaga Aqooneed ee Casharka (Level)
                         </label>
                         <div className="grid grid-cols-3 gap-2">
                           {["Bilaabo (Beginner)", "Dhexe (Intermediate)", "Sare (Advanced)"].map(
@@ -276,7 +881,7 @@ Waqtiga aan doorbidayo: ${preferredTime}`;
                                 key={lvl}
                                 type="button"
                                 onClick={() => setLevel(lvl)}
-                                className={`rounded-lg border p-2.5 text-xs font-medium text-center transition ${
+                                className={`rounded-xl border p-3 text-xs font-bold text-center transition cursor-pointer ${
                                   level === lvl
                                     ? "border-emerald-700 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-700/10"
                                     : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
@@ -287,161 +892,159 @@ Waqtiga aan doorbidayo: ${preferredTime}`;
                             )
                           )}
                         </div>
-                      </div>
-
-                      {/* Preferred Time */}
+                                              {/* Payment Plan */}
                       <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1 flex items-center gap-1.5">
-                          <Clock className="w-4 h-4 text-stone-400" />
-                          Waqtiga Aad Dooran Lahayd
+                        <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                          <DollarSign className="w-4 h-4 text-emerald-800" />
+                          Qorshaha & Maalmaha (Study Plan & Price)
                         </label>
-                        <div className="grid grid-cols-3 gap-2">
-                          {["Subax (Morning)", "Gelab (Afternoon)", "Habeen (Evening)"].map(
-                            (time) => (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {[
+                            { days: 2, label: "2 Maalmood asbuucii", desc: "2 Days / Week" },
+                            { days: 3, label: "3 Maalmood asbuucii", desc: "3 Days / Week" },
+                            { days: 4, label: "4 Maalmood asbuucii", desc: "4 Days / Week" },
+                            { days: 5, label: "5 Maalmood (Ugu caansan)", desc: "5 Days / Week", popular: true },
+                          ].map((plan) => {
+                            const calculatedPrice = getCalculatedPrice(plan.days, studentTotalCount);
+                            const standardPrice = getStandardPrice(plan.days, studentTotalCount);
+                            const discount = standardPrice - calculatedPrice;
+
+                            return (
                               <button
-                                key={time}
+                                key={plan.days}
                                 type="button"
-                                onClick={() => setPreferredTime(time)}
-                                className={`rounded-lg border p-2.5 text-xs font-medium text-center transition ${
-                                  preferredTime === time
-                                    ? "border-emerald-700 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-700/10"
-                                    : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                                onClick={() => setStudyDays(plan.days)}
+                                className={`relative rounded-2xl border p-4 text-left transition duration-200 cursor-pointer flex flex-col justify-between ${
+                                  studyDays === plan.days
+                                    ? "border-emerald-700 bg-emerald-50/40 ring-2 ring-emerald-700/10"
+                                    : "border-stone-200 bg-white hover:bg-stone-50"
                                 }`}
                               >
-                                {time.split(" ")[0]}
+                                {plan.popular && (
+                                  <span className="absolute -top-2 right-3 bg-amber-500 text-stone-950 font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                                    Popular
+                                  </span>
+                                )}
+                                <div>
+                                  <span className="text-xs font-bold text-stone-900 block">
+                                    {plan.label}
+                                  </span>
+                                  <span className="text-[10px] text-stone-400 block mb-2">
+                                    {plan.desc}
+                                  </span>
+                                </div>
+                                <div className="mt-2">
+                                  <div className="flex items-baseline gap-1">
+                                    <span className="text-xl font-black text-emerald-800">
+                                      ${calculatedPrice}
+                                    </span>
+                                    <span className="text-[10px] text-stone-500 font-medium">
+                                      / bishii
+                                    </span>
+                                    {discount > 0 && (
+                                      <span className="text-[10px] text-stone-400 line-through font-bold ml-1.5">
+                                        ${standardPrice}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {discount > 0 && (
+                                    <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100/50 rounded px-1.5 py-0.5 mt-1.5 inline-block">
+                                      Qiimo dhimis qoys (-${discount})
+                                    </span>
+                                  )}
+                                </div>
                               </button>
-                            )
-                          )}
+                            );
+                          })}
                         </div>
-                      </div>
+                      </div>  </div>
 
-                      {/* Notes */}
+                      {/* Notes / Message */}
                       <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">
-                          Faahfaahin dheeri ah (Notes)
+                        <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                          <MessageSquare className="w-4 h-4 text-emerald-800" />
+                          Fariin noo reeb faahfaahin dheeraad ah (Extra notes)
                         </label>
                         <textarea
                           id="student-notes-textarea"
                           value={notes}
                           onChange={(e) => setNotes(e.target.value)}
-                          placeholder="Halkaan ku qor wixii fariin ama su'aalo ah oo aad qabto..."
-                          rows={2}
-                          className="w-full rounded-lg border border-stone-200 p-3 text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 text-sm"
+                          placeholder="Tusaale: Haddii aad rabto saacado gaar ah ama faahfaahin dheeraad ah oo aad qabto..."
+                          rows={2.5}
+                          className="w-full rounded-xl border border-stone-200 p-3 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
                         />
                       </div>
                     </motion.div>
                   )}
 
-                  {/* Actions */}
-                  <div className="flex gap-3 pt-4 border-t border-stone-100">
+                  {/* Actions Bar */}
+                  <div className="flex gap-3 pt-4 border-t border-stone-100 shrink-0">
                     {step === 2 && (
                       <button
                         type="button"
                         onClick={() => setStep(1)}
-                        className="flex-1 rounded-xl border border-stone-200 bg-white py-3 font-medium text-stone-700 hover:bg-stone-50 transition text-sm"
+                        className="flex-1 rounded-xl border border-stone-200 bg-white py-3.5 text-xs font-bold text-stone-700 hover:bg-stone-50 transition cursor-pointer"
                       >
-                        Ku laabo
+                        Ku laabo (Back)
                       </button>
                     )}
                     {step === 1 ? (
                       <button
                         type="button"
                         onClick={handleNext}
-                        className="flex-1 rounded-xl bg-emerald-800 py-3 font-medium text-white hover:bg-emerald-700 transition shadow-md shadow-emerald-900/10 text-sm"
+                        className="flex-1 rounded-xl bg-emerald-800 py-3.5 text-xs font-bold text-white hover:bg-emerald-700 transition shadow-md shadow-emerald-900/10 cursor-pointer text-center"
                       >
-                        Sii Soco
+                        Sii Soco (Next)
                       </button>
                     ) : (
                       <button
                         type="submit"
-                        className="flex-1 rounded-xl bg-gradient-to-r from-emerald-800 to-emerald-700 py-3 font-medium text-white hover:opacity-95 transition shadow-md shadow-emerald-900/10 text-sm"
+                        className="flex-1 rounded-xl bg-gradient-to-r from-emerald-800 to-emerald-700 py-3.5 text-xs font-bold text-white hover:opacity-95 transition shadow-md shadow-emerald-900/10 cursor-pointer flex items-center justify-center gap-1.5"
                       >
-                        Diiwaan-geli Hadda
+                        <span>Diiwaan-geli Hadda 🚀</span>
                       </button>
                     )}
                   </div>
                 </form>
               ) : (
+                /* Success Screen with Only the Simple Somali Success Message */
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="text-center py-4 space-y-6"
+                  className="text-center py-6 space-y-6 max-w-md mx-auto"
                 >
-                  <div className="inline-flex items-center justify-center rounded-full bg-emerald-50 p-3 text-emerald-800 ring-4 ring-emerald-500/10">
+                  {/* Elegant green check icon */}
+                  <div className="inline-flex items-center justify-center rounded-full bg-emerald-50 p-4 text-emerald-800 ring-4 ring-emerald-500/10">
                     <CheckCircle className="w-12 h-12" />
                   </div>
 
-                  <div>
-                    <h4 className="text-xl font-bold text-stone-900 font-display">
-                      Hambalyo, {name.split(" ")[0]}!
-                    </h4>
-                    <p className="text-stone-500 text-sm mt-1">
-                      Diiwaan-gelintaada si guul leh ayaa loo aqbalay. Macalinkaaga ayaa kula soo
-                      xiriiri doona WhatsApp dhawaan.
+                  {/* The Single and Precise Requested Success Message */}
+                  <div className="bg-emerald-50/60 border border-emerald-100 rounded-2xl p-5 text-center shadow-sm">
+                    <p className="text-emerald-950 text-[14px] sm:text-base font-semibold leading-relaxed font-sans">
+                      Waad ku guulausatay diwaan galintaada baro quran academy 6 saac gudahood anaga kula soo xidhiidhayna fariin WhatsApp.
                     </p>
                   </div>
 
-                  {/* Registration Card */}
-                  <div className="bg-stone-50 rounded-2xl border border-stone-100 p-5 text-left relative overflow-hidden">
-                    {/* Watermark logo */}
-                    <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-[0.03]">
-                      <BookOpen className="w-32 h-32 text-emerald-800" />
-                    </div>
-
-                    <div className="flex justify-between items-center mb-4 border-b border-stone-200/60 pb-3">
-                      <div>
-                        <span className="text-[10px] font-bold text-emerald-800 tracking-wider uppercase block">
-                          BARO QURAN ACADEMY
-                        </span>
-                        <span className="text-xs font-mono text-stone-400">Card-ka Ardayga</span>
-                      </div>
-                      <span className="font-mono text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-1 rounded">
-                        {generatedId}
-                      </span>
-                    </div>
-
-                    <div className="space-y-2.5 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-stone-400">Magaca:</span>
-                        <span className="font-medium text-stone-800">{name}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-stone-400">Koorsada:</span>
-                        <span className="font-medium text-emerald-800 capitalize">
-                          {COURSES.find((c) => c.id === course)?.title || course}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-stone-400">Heerka:</span>
-                        <span className="font-medium text-stone-800">{level}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-stone-400">Waqtiga:</span>
-                        <span className="font-medium text-stone-800">{preferredTime}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* WhatsApp contact CTA */}
-                  <div className="space-y-3">
+                  {/* WhatsApp contact CTA & Close */}
+                  <div className="space-y-3 pt-2">
                     <a
                       id="whatsapp-confirm-link"
                       href={getWhatsAppLink()}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3.5 text-sm font-medium text-white hover:opacity-95 transition shadow-lg shadow-[#25D366]/10"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-4 text-xs font-bold text-white hover:opacity-95 transition shadow-lg shadow-[#25D366]/10 cursor-pointer"
                     >
                       <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                         <path d="M12.031 2c-5.511 0-9.99 4.479-9.99 9.99 0 2.08.636 4.016 1.733 5.62l-1.134 4.148 4.254-1.116c1.554.954 3.372 1.512 5.32 1.512 5.511 0 9.99-4.479 9.99-9.99s-4.479-9.99-9.99-9.99zm5.348 14.152c-.226.636-1.116 1.171-1.84 1.258-.619.075-1.423.111-3.69-.836-2.906-1.212-4.739-4.168-4.885-4.364-.146-.195-1.185-1.579-1.185-3.009 0-1.43.748-2.133.1013-2.428-.266-.295-.583-.37-.778-.37-.195 0-.39.012-.562.024-.515.035-.86.291-1.116.54-.367.366-.991 1.096-.991 2.67s1.144 3.1 1.299 3.313c.155.213 2.25 3.435 5.451 4.819.762.329 1.356.525 1.82.673.766.243 1.464.209 2.015.127.615-.092 1.84-.753 2.101-1.442.261-.69.261-1.282.183-1.402-.078-.12-.284-.195-.592-.35-.308-.155-1.82-.898-2.101-1.001-.281-.102-.486-.155-.69.155-.205.308-.795.998-.975 1.205-.18.207-.36.231-.669.075-.309-.155-1.303-.481-2.482-1.534-.918-.82-1.538-1.832-1.718-2.141-.18-.309-.019-.476.136-.63.139-.138.309-.36.463-.54.154-.18.205-.309.308-.515.103-.206.051-.386-.026-.54-.077-.155-.69-1.666-.945-2.282-.249-.6-.547-.519-.748-.529-.193-.01-.414-.012-.636-.012s-.583.084-.888.423c-.305.339-1.168 1.144-1.168 2.788z" />
                       </svg>
-                      Nagala soo Xiriir WhatsApp-ka
+                      <span>WhatsApp ku xiriir (Guji Halkan)</span>
                     </a>
                     <button
                       id="close-success-btn"
                       onClick={handleClose}
-                      className="w-full text-stone-500 hover:text-stone-800 font-medium py-2.5 transition text-xs"
+                      className="w-full text-stone-500 hover:text-stone-800 font-bold py-2.5 transition text-xs cursor-pointer"
                     >
-                      Xir Daaqadda
+                      Xir Daaqadda (Close)
                     </button>
                   </div>
                 </motion.div>
