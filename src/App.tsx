@@ -52,77 +52,133 @@ export default function App() {
   useEffect(() => {
     let title = "";
     let desc = "";
+    let keywords = "";
     
     if (lang === "so") {
+      // Set the HTML lang attribute
+      document.documentElement.setAttribute("lang", "so");
+      
       if (currentRoute === "home") {
         title = "Baro Qur'aan Online | Dugsi Qur'aan, Tajwiid & Culuumta Shareecada";
         desc = "Baro Qur'aanka Kariimka ah Online si xirfad leh! Waxaan bixinaa barashada higaada, barashada tajwiidka, xifdinta Qur'aanka (Dugsi Qur'aan), luqadda Carabiga, iyo barashada kutubta culuumta shareecada islamka. Macalimiin Soomaaliyeed oo khubaro ah.";
+        keywords = "Qur'aan, Baro Qur'aan, Barashada Qur'aanka, Qur'aan Online, Macallin Qur'aan, Tajwiid, Xifdinta Qur'aanka, Culuumta Shareecada, Luqadda Carabiga, Dugsi Qur'aan Online, barashada hifdiga, tajweed online, dugsi online ah";
       } else if (currentRoute === "programs") {
         title = "Koorsooyinka & Programyada | Baro Quran Academy";
         desc = "Baadh barnaamijyada aan bixino: Barashada Higaada, barashada tajwiidka, hifdiga Qur'aanka, barashada kutubta culuumta shareecada Islaamka iyo Carabiga. Dooro koorsada kugu habboon!";
+        keywords = "koorsooyinka quraanka, barashada hifdiga quraanka, barashada tajwiidka, luqada carabiga online, barashada culuumta shareecada, dugsi quran, qaab online ah";
       } else if (currentRoute === "pricing") {
         title = "Qorshaha Qiimaha & Lacagta | Baro Quran Academy";
         desc = "Qiimo jaban oo ku habboon qoys kasta. Ka xisaabi qiimo dhimista qoyska adigoo dooranaya tirada ardayda iyo maalmaha aad rabi lahayd inaad dhigato.";
+        keywords = "qiimaha dugsi quran, qorshaha qiimaha baro quran, casharada quraanka qiimahooda, dugsi quran jaban, quran pricing online, qiimo dhimis qoys";
       } else if (currentRoute === "teachers") {
         title = "Macalimiinta Sharafta leh | Baro Quran Academy";
         desc = "La kulan macalimiinteena khubarada ah ee u tababaran waxbarashada online-ka ah ee Qur'aanka iyo Culuumta Shareecada. Casharro gaar ah oo 1-on-1 ah.";
+        keywords = "macalimiinta quraanka online, macalin quran somali, macalin tajweed, somali quran teachers online, macalimiin xirfad leh, barayaal somali";
       } else if (currentRoute === "about") {
         title = "Ku saabsan Akadeemiyada | Baro Quran Academy";
         desc = "Wax ka baro hadafkayaga, aragtidayada, iyo sababta aan u nahay dugsiga online-ka ah ee ugu kalsoonida badan ee barashada Qur'aanka iyo Luqadda Carabiga.";
+        keywords = "ku saabsan baro quran, baro quran academy, dugsiga quraanka online, vision-keena, hadafkayaga";
       } else if (currentRoute === "blog") {
         title = "Qoraallada & Maqaallada | Baro Quran Academy";
         desc = "Akhriso maqaallada ku saabsan barashada Qur'aanka, talooyinka xifdiga, muhiimada tajwiidka, iyo munaasabadaha diiniga ah.";
+        keywords = "maqaallada quraanka, talooyinka xifdiga quraanka, muhiimada tajwiidka, maqaal diini ah, baro quran blog";
       } else {
         title = "Baro Qur'aan Online - Academy-ga Qur'aanka Kariimka";
         desc = "Baro Qur'aanka Kariimka ah Online si xirfad leh oo sahlan.";
+        keywords = "baro quran online, quran somali, dugsi quran";
       }
     } else if (lang === "ar") {
+      document.documentElement.setAttribute("lang", "ar");
+      
       if (currentRoute === "home") {
         title = "تعلم القرآن الكريم عبر الإنترنت | أكاديمية بارو للقرآن والعلوم الشرعية";
         desc = "تعلم القرآن الكريم عبر الإنترنت مع معلمين مجازين ذوي خبرة. نوفر دروس التجويد، حفظ القرآن، اللغة العربية، وعلوم الشريعة الإسلامية. حصص فردية تفاعلية.";
+        keywords = "قرآن, تعلم القرآن, دراسة القرآن, القرآن أونلاين, معلم قرآن, تجويد, حفظ القرآن الكريم, العلوم الشرعية, اللغة العربية, مدرسة قرآن إلكترونية";
       } else if (currentRoute === "programs") {
         title = "البرامج والمسارات التعليمية | أكاديمية بارو للقرآن";
         desc = "استكشف برامجنا: القاعدة النورانية، التجويد، حفظ القرآن الكريم، علوم الشريعة الإسلامية، واللغة العربية.";
+        keywords = "دورات قرآنية, حفظ القرآن, التجويد, اللغة العربية أونلاين, العلوم الشرعية, دروس دينية";
       } else if (currentRoute === "pricing") {
         title = "خطط الأسعار والاشتراكات | أكاديمية بارو للقرآن";
         desc = "خطط أسعار مرنة واقتصادية تناسب الجميع مع خصومات مميزة للمجموعات والعائلات.";
+        keywords = "أسعار مدرسة القرآن, تكلفة دراسة القرآن أونلاين, خصم عائلي, خطط اشتراك ميسرة";
       } else if (currentRoute === "teachers") {
         title = "طاقم المعلمين والمعلمات | أكاديمية بارو للقرآن";
         desc = "نخبة من المعلمين المتميزين ذوي الخبرة الطويلة في تدريس القرآن والعلوم الإسلامية لغير الناطقين بها.";
+        keywords = "معلمو قرآن أونلاين, مدرس تجويد, معلمات قرآن, طاقم تدريس صومالي";
       } else {
         title = "أكاديمية بارو لعلوم القرآن والشريعة";
         desc = "تعلم القرآن والعلوم الشرعية بطرق تفاعلية وعبر الإنترنت.";
+        keywords = "أكاديمية بارو للقرآن, دراسة إسلامية أونلاين";
       }
     } else { // en
+      document.documentElement.setAttribute("lang", "en");
+      
       if (currentRoute === "home") {
         title = "Learn Quran Online | Baro Quran Academy - Tajweed & Islamic Studies";
         desc = "Learn the Holy Quran online professionally! We offer Arabic alphabet basics, Tajweed rules, Quran memorization, Arabic language, and Islamic Sharia books. Expert Somali teachers with personalized 1-on-1 sessions.";
+        keywords = "Quran, Learn Quran, Quran online, Online Quran teacher, Tajweed, Quran memorization, Islamic Sharia studies, Arabic language, Somali quran academy, learn quran online";
       } else if (currentRoute === "programs") {
         title = "Our Programs & Courses | Baro Quran Academy";
         desc = "Explore our courses: Quran Memorization, Tajweed Rules, Arabic Language Basics, and Islamic Sharia Sciences. Find the perfect course for you or your kids!";
+        keywords = "quran courses online, quran hifz program, online tajweed classes, basic arabic language, islamic studies online, study plans";
       } else if (currentRoute === "pricing") {
         title = "Affordable Study Plans & Pricing | Baro Quran Academy";
         desc = "Transparent pricing starting from $20/month. Estimate your customized group or family discount using our live pricing calculator!";
+        keywords = "quran academy pricing, learn quran cost, cheap quran online classes, family discount quran, study plans";
       } else if (currentRoute === "teachers") {
         title = "Meet Our Certified Teachers | Baro Quran Academy";
         desc = "Learn from qualified, experienced, and vetted instructors specializing in online Quranic teaching & Arabic instruction.";
+        keywords = "online quran teachers, somali quran teacher, tajweed instructor online, female quran teacher, hifz academy instructors";
       } else {
         title = "Baro Quran Academy | Learn Quran & Sharia Online";
         desc = "Premium online academy for Quran, Tajweed, Arabic language, and Islamic studies with flexible schedules.";
+        keywords = "baro quran academy, online islamic courses, professional tutors";
       }
     }
 
+    // Set Document Title
     document.title = title;
     
-    // Update Meta Description
-    let metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) {
-      metaDesc.setAttribute("content", desc);
+    // Helper to set or create meta tags
+    const updateMetaTag = (name: string, content: string, isProperty: boolean = false) => {
+      const attribute = isProperty ? "property" : "name";
+      let tag = document.querySelector(`meta[${attribute}="${name}"]`);
+      if (tag) {
+        tag.setAttribute("content", content);
+      } else {
+        const meta = document.createElement("meta");
+        meta.setAttribute(attribute, name);
+        meta.setAttribute("content", content);
+        document.head.appendChild(meta);
+      }
+    };
+
+    // Update Meta Description & Keywords
+    updateMetaTag("description", desc);
+    updateMetaTag("keywords", keywords);
+
+    // Update Open Graph tags for better social sharing indexing
+    updateMetaTag("og:title", title, true);
+    updateMetaTag("og:description", desc, true);
+    updateMetaTag("og:type", "website", true);
+    
+    const canonicalUrl = `https://baroquran.com/#${currentRoute}`;
+    updateMetaTag("og:url", canonicalUrl, true);
+
+    // Update Twitter meta tags
+    updateMetaTag("twitter:title", title);
+    updateMetaTag("twitter:description", desc);
+
+    // Update Canonical URL link element
+    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (canonicalLink) {
+      canonicalLink.setAttribute("href", canonicalUrl);
     } else {
-      const meta = document.createElement("meta");
-      meta.name = "description";
-      meta.content = desc;
-      document.head.appendChild(meta);
+      const link = document.createElement("link");
+      link.setAttribute("rel", "canonical");
+      link.setAttribute("href", canonicalUrl);
+      document.head.appendChild(link);
     }
   }, [currentRoute, lang]);
 
