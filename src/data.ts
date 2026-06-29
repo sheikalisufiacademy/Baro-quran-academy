@@ -1,5 +1,14 @@
 import { Course, Testimonial } from "./types";
 
+import higaadaImg from "./assets/images/higaada_nourania_1782639159838.jpg";
+import quranLaptopImg from "./assets/images/quran_on_laptop_1782639173457.jpg";
+import arabicTvImg from "./assets/images/arabic_tv_class_1782639185358.jpg";
+import islamicStudiesImg from "./assets/images/islamic_studies_desk_1782639197766.jpg";
+
+import sheikhImg from "./assets/images/sheikh_teaching_adults_1782636711922.jpg";
+import ustadAhmedImg from "./assets/images/ustad_ahmed_teaching_arabic_1782636739073.jpg";
+import ustaadaMaryamaImg from "./assets/images/ustaada_maryama_library_1782636726802.jpg";
+
 export const COURSES: Course[] = [
   {
     id: "higaada",
@@ -10,7 +19,7 @@ export const COURSES: Course[] = [
     reviewCount: 120,
     price: "$20/Month",
     icon: "BookOpen",
-    image: "/src/assets/images/higaada_nourania_1782639159838.jpg",
+    image: higaadaImg,
     levelDetails: [
       {
         level: "Bilaabo (Beginner)",
@@ -31,7 +40,7 @@ export const COURSES: Course[] = [
     reviewCount: 215,
     price: "$30/Month",
     icon: "Award",
-    image: "/src/assets/images/quran_on_laptop_1782639173457.jpg",
+    image: quranLaptopImg,
     levelDetails: [
       {
         level: "Akhrinta & Qawaacidda",
@@ -60,7 +69,7 @@ export const COURSES: Course[] = [
     reviewCount: 98,
     price: "$25/Month",
     icon: "Languages",
-    image: "/src/assets/images/arabic_tv_class_1782639185358.jpg",
+    image: arabicTvImg,
     levelDetails: [
       {
         level: "Luuqada & Wada-hadalka",
@@ -81,7 +90,7 @@ export const COURSES: Course[] = [
     reviewCount: 110,
     price: "$20/Month",
     icon: "Scale",
-    image: "/src/assets/images/islamic_studies_desk_1782639197766.jpg",
+    image: islamicStudiesImg,
     levelDetails: [
       {
         level: "Fiqiga Cibaadada (Fiqh al-Ibadah)",
@@ -102,7 +111,7 @@ export const COURSES: Course[] = [
     reviewCount: 85,
     price: "$18/Month",
     icon: "BookOpen",
-    image: "/src/assets/images/islamic_studies_desk_1782639197766.jpg",
+    image: islamicStudiesImg,
     levelDetails: [
       {
         level: "Hadith Studies",
@@ -123,7 +132,7 @@ export const COURSES: Course[] = [
     reviewCount: 92,
     price: "$20/Month",
     icon: "ShieldCheck",
-    image: "/src/assets/images/islamic_studies_desk_1782639197766.jpg",
+    image: islamicStudiesImg,
     levelDetails: [
       {
         level: "Tawxiidka & Iimaanka",
@@ -144,7 +153,7 @@ export const COURSES: Course[] = [
     reviewCount: 104,
     price: "$25/Month",
     icon: "BookOpen",
-    image: "/src/assets/images/islamic_studies_desk_1782639197766.jpg",
+    image: islamicStudiesImg,
     levelDetails: [
       {
         level: "Tafsiirka aasaasiga ah",
@@ -165,7 +174,7 @@ export const COURSES: Course[] = [
     reviewCount: 78,
     price: "$20/Month",
     icon: "ShieldCheck",
-    image: "/src/assets/images/islamic_studies_desk_1782639197766.jpg",
+    image: islamicStudiesImg,
     levelDetails: [
       {
         level: "Caqiidada Islaamka",
@@ -186,7 +195,7 @@ export const COURSES: Course[] = [
     reviewCount: 72,
     price: "$15/Month",
     icon: "Languages",
-    image: "/src/assets/images/islamic_studies_desk_1782639197766.jpg",
+    image: islamicStudiesImg,
     levelDetails: [
       {
         level: "Somaliga Aasaasiga ah",
@@ -234,7 +243,7 @@ export const TEACHERS = [
     education: "Leh khibrad barista oo dhan 12 sano oo wax-barid ah.",
     rating: 4.9,
     reviews: 140,
-    avatar: "/src/assets/images/sheikh_teaching_adults_1782636711922.jpg"
+    avatar: sheikhImg
   },
   {
     id: "teacher-2",
@@ -245,7 +254,7 @@ export const TEACHERS = [
     education: "Leh khibrad waxbaris oo dhan 8 sano oo dhanka Carabiga ah.",
     rating: 4.8,
     reviews: 98,
-    avatar: "/src/assets/images/ustad_ahmed_teaching_arabic_1782636739073.jpg"
+    avatar: ustadAhmedImg
   },
   {
     id: "teacher-3",
@@ -256,6 +265,6 @@ export const TEACHERS = [
     education: "Leh khibrad durugsan oo dhan 10 sano oo dhanka Fiqiga ah.",
     rating: 5.0,
     reviews: 112,
-    avatar: "/src/assets/images/ustaada_maryama_library_1782636726802.jpg"
+    avatar: ustaadaMaryamaImg
   }
 ];

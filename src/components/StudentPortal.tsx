@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { BookOpen, Calendar, CheckCircle2, Award, Clock, FileText, Send, User, LogOut, ArrowRight, Video, Sparkles, Check, Play } from "lucide-react";
 import { Registration } from "../types";
+import sheikhImg from "../assets/images/sheikh_teaching_adults_1782636711922.jpg";
 
 interface StudentPortalProps {
   onJoinClick: () => void;
@@ -367,7 +368,7 @@ export default function StudentPortal() {
                     <div className="relative inline-block">
                       <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" />
                       <img
-                        src="/src/assets/images/sheikh_teaching_adults_1782636711922.jpg"
+                        src={sheikhImg}
                         alt="Sheikh Cabdiraxmaan"
                         className="w-24 h-24 rounded-full border-2 border-emerald-500 object-cover relative z-10"
                         referrerPolicy="no-referrer"
