@@ -9,6 +9,11 @@ import sheikhImg from "./assets/images/sheikh_teaching_adults_1782636711922.jpg"
 import ustadAhmedImg from "./assets/images/ustad_ahmed_teaching_arabic_1782636739073.jpg";
 import ustaadaMaryamaImg from "./assets/images/ustaada_maryama_library_1782636726802.jpg";
 
+// New high-quality course images generated for specific topics
+import fiqhImg from "./assets/images/islamic_fiqh_practice_1782928748784.jpg";
+import aqeedahImg from "./assets/images/islamic_aqeedah_tawheed_1782928759531.jpg";
+import somaliImg from "./assets/images/learn_somali_textbook_1782928771364.jpg";
+
 export const COURSES: Course[] = [
   {
     id: "higaada",
@@ -90,7 +95,7 @@ export const COURSES: Course[] = [
     reviewCount: 110,
     price: "$20/Month",
     icon: "Scale",
-    image: islamicStudiesImg,
+    image: fiqhImg,
     levelDetails: [
       {
         level: "Fiqiga Cibaadada (Fiqh al-Ibadah)",
@@ -132,7 +137,7 @@ export const COURSES: Course[] = [
     reviewCount: 92,
     price: "$20/Month",
     icon: "ShieldCheck",
-    image: islamicStudiesImg,
+    image: aqeedahImg,
     levelDetails: [
       {
         level: "Tawxiidka & Iimaanka",
@@ -174,7 +179,7 @@ export const COURSES: Course[] = [
     reviewCount: 78,
     price: "$20/Month",
     icon: "ShieldCheck",
-    image: islamicStudiesImg,
+    image: aqeedahImg,
     levelDetails: [
       {
         level: "Caqiidada Islaamka",
@@ -195,7 +200,7 @@ export const COURSES: Course[] = [
     reviewCount: 72,
     price: "$15/Month",
     icon: "Languages",
-    image: islamicStudiesImg,
+    image: somaliImg,
     levelDetails: [
       {
         level: "Somaliga Aasaasiga ah",

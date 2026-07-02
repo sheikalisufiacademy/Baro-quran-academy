@@ -65,10 +65,11 @@ export default function RegistrationModal({
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("");
   const [customCountry, setCustomCountry] = useState("");
-  const [city, setCity] = useState("");
+  const [city, setCity] = useState("Online");
   const [course, setCourse] = useState(selectedCourseId);
   const [level, setLevel] = useState("Bilaabo (Beginner)");
   const [studyDays, setStudyDays] = useState<number>(3); // Default to 3 days/week
+  const [preferredTime, setPreferredTime] = useState("Habeen (Evening: 6:00 PM - 10:00 PM)");
   const [paymentPlan, setPaymentPlan] = useState(""); 
   const [notes, setNotes] = useState("");
   
@@ -154,7 +155,6 @@ export default function RegistrationModal({
     } else if (country === "Wadan Kale (Specify...)" && !customCountry.trim()) {
       errs.country = "Fadlan qor magaca wadankaaga.";
     }
-    if (!city.trim()) errs.city = "Fadlan qor magaalada aad degan tahay.";
     if (!email.trim()) {
       errs.email = "Fadlan qor Gmail-kaaga si lagugu soo diro fariin diiwaan-gelin.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -212,7 +212,6 @@ export default function RegistrationModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep1()) {
-      setStep(1);
       return;
     }
 
@@ -232,10 +231,10 @@ export default function RegistrationModal({
       phone,
       course,
       level,
-      preferredTime: "Doortay Qorshe", // backwards compatibility
+      preferredTime: preferredTime,
       notes,
       country: finalCountry,
-      city,
+      city: "Online",
       whatsapp: phone,
       paymentPlan,
       studentType,
@@ -430,15 +429,25 @@ export default function RegistrationModal({
         `;
 
         await sendGmailMessage(activeToken, activeAdminEmail, adminSubject, adminBody);
+        
+        // Sidoo kale haddii email-ka ku jira config uu ka duwan yahay baroquranacademy1@gmail.com, u dir baroquranacademy1@gmail.com
+        if (activeAdminEmail !== "baroquranacademy1@gmail.com") {
+          try {
+            await sendGmailMessage(activeToken, "baroquranacademy1@gmail.com", adminSubject, adminBody);
+          } catch (copyErr) {
+            console.error("Failed to copy baroquranacademy1@gmail.com:", copyErr);
+          }
+        }
+
         setEmailStatus({
           success: true,
-          message: "Emails-kii waa la diray! Adiga iyo Ardaygaba fariinta Gmail-ka si guul leh ayaad u hesheen."
+          message: "Masha Allah! Email-adii xaqiijinta si automatic ah ayaa loo kala diray (Ardayga iyo Maamulaha baroquranacademy1@gmail.com)."
         });
       } catch (err: any) {
         console.error("Auto Gmail dispatch failed:", err);
         setEmailStatus({
           success: false,
-          message: "Is-diiwaan gelintu waa guul, laakiin cilad ayaa ku timid dirista Gmail-ka. Fadlan xiriirka WhatsApp-ka isticmaal."
+          message: "Diiwaan-gelintu waa guul, laakiin waxaa dhacay cilad dhinaca xiriirka Gmail-ka ah. Fadlan ku gudbi WhatsApp."
         });
       } finally {
         setSendingEmail(false);
@@ -447,7 +456,7 @@ export default function RegistrationModal({
       // No active session token
       setEmailStatus({
         success: false,
-        message: "Ogeysiis: Si toos ah fariin looma dirin madaama Gmail-ka aan lagu xirin app-ka ee dashboard-ka Gmail-ka."
+        message: "Ogeysiis Maamulka: Email automatic ah ma bixin madaama Gmail-ka aan weli la isku xirin. Fadlan tag qaybta 'Gmail Portal' ee sare si aad u xirto Google Account-ka rasmiga ah ee baroquranacademy1@gmail.com si emailadu u baxaan."
       });
     }
   };
@@ -459,10 +468,11 @@ export default function RegistrationModal({
     setPhone("");
     setCountry("");
     setCustomCountry("");
-    setCity("");
+    setCity("Online");
     setCourse(selectedCourseId);
     setLevel("Bilaabo (Beginner)");
     setStudyDays(3);
+    setPreferredTime("Habeen (Evening: 6:00 PM - 10:00 PM)");
     setStudentType("single");
     setStudentCount("1");
     setExtraStudents([]);
@@ -490,8 +500,9 @@ export default function RegistrationModal({
 *Magacayga:* ${name}
 *Koorsada:* ${selectedCourseTitle}
 *Heerka:* ${level}
-*Wadanka/Magaalada:* ${finalCountry}, ${city}
+*Wadanka/Magaalada:* ${finalCountry}
 *Qorshaha Lacagta:* ${paymentPlan}
+*Wakhtiga Doorbiday:* ${preferredTime}
 *Tirada Ardayda:* ${studentType === "multiple" ? `Ka badan (Wadajir u diiwaan galay: ${extraNames.length + 1} arday)` : "Hal arday"}`;
 
     if (extraNames.length > 0) {
@@ -553,274 +564,204 @@ export default function RegistrationModal({
             <div className="p-6 overflow-y-auto flex-1">
               {!isSuccess ? (
                 <form onSubmit={handleSubmit} className="space-y-6 text-left">
-                  {/* Step Banner Progress */}
-                  <div className="flex items-center justify-between text-xs text-stone-500 pb-2">
-                    <span className={`font-semibold ${step === 1 ? "text-emerald-800 font-bold" : "text-stone-400"}`}>
-                      1. Macluumaadka Shaqsiga
-                    </span>
-                    <div className="h-1 flex-1 mx-4 bg-stone-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-emerald-800 transition-all duration-300"
-                        style={{ width: step === 1 ? "50%" : "100%" }}
+                  {/* Section 1: Macluumaadka Shaqsiga (Personal Details) */}
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-extrabold text-emerald-800 uppercase tracking-widest border-b border-stone-100 pb-2">
+                      1. Macluumaadka Shaqsiga (Personal Info)
+                    </h4>
+
+                    {/* Name */}
+                    <div>
+                      <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                        <User className="w-4 h-4 text-emerald-800" />
+                        Magacaaga oo Buuxa (Full Name) <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="student-name-input"
+                        type="text"
+                        required
+                        value={name}
+                        onChange={(e) => {
+                          setName(e.target.value);
+                          if (errors.name) setErrors({ ...errors, name: "" });
+                        }}
+                        placeholder="Tusaale: Axmed Maxamed Cilmi"
+                        className={`w-full rounded-xl border p-3 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 ${
+                          errors.name
+                            ? "border-red-300 focus:ring-red-500/20"
+                            : "border-stone-200 focus:ring-emerald-700/20 focus:border-emerald-700"
+                        }`}
                       />
+                      {errors.name && (
+                        <p className="mt-1 text-xs text-red-500">{errors.name}</p>
+                      )}
                     </div>
-                    <span className={`font-semibold ${step === 2 ? "text-emerald-800 font-bold" : "text-stone-400"}`}>
-                      2. Casharada & Tirada Ardayda
-                    </span>
-                  </div>
 
-                  {step === 1 ? (
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="space-y-4"
-                    >
-                      {/* Name */}
-                      <div>
-                        <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                          <User className="w-4 h-4 text-emerald-800" />
-                          Magacaaga oo Buuxa (Full Name) <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          id="student-name-input"
-                          type="text"
-                          required
-                          value={name}
-                          onChange={(e) => {
-                            setName(e.target.value);
-                            if (errors.name) setErrors({ ...errors, name: "" });
+                    {/* Single vs Multiple Students option */}
+                    <div className="bg-emerald-50/40 rounded-2xl p-4 border border-emerald-100/60 space-y-3">
+                      <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <Users className="w-4 h-4 text-emerald-800" />
+                        Yaa Is-diiwaangelinaya? (Who is registering?) <span className="text-red-500">*</span>
+                      </label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStudentType("single");
+                            setStudentCount("1");
+                            setExtraStudents([]);
                           }}
-                          placeholder="Tusaale: Axmed Maxamed Caleeli"
-                          className={`w-full rounded-xl border p-3 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 ${
-                            errors.name
-                              ? "border-red-300 focus:ring-red-500/20"
-                              : "border-stone-200 focus:ring-emerald-700/20 focus:border-emerald-700"
+                          className={`rounded-xl border p-3 text-xs font-bold text-center transition flex flex-col items-center justify-center gap-1 cursor-pointer ${
+                            studentType === "single"
+                              ? "border-emerald-700 bg-white text-emerald-800 ring-2 ring-emerald-700/10"
+                              : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
                           }`}
-                        />
-                        {errors.name && (
-                          <p className="mt-1 text-xs text-red-500">{errors.name}</p>
-                        )}
+                        >
+                          <span className="text-xs">Kaligay (1 Qof)</span>
+                          <span className="text-[9.5px] text-stone-400 font-normal">Single Student</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStudentType("multiple");
+                            if (studentCount === "1") {
+                              setStudentCount("2");
+                              setExtraStudents([""]);
+                            }
+                          }}
+                          className={`rounded-xl border p-3 text-xs font-bold text-center transition flex flex-col items-center justify-center gap-1 cursor-pointer ${
+                            studentType === "multiple"
+                              ? "border-emerald-700 bg-white text-emerald-800 ring-2 ring-emerald-700/10"
+                              : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                          }`}
+                        >
+                          <span>Dad Ka Badan (2+)</span>
+                          <span className="text-[9.5px] text-stone-400 font-normal">Family Discount 25%</span>
+                        </button>
                       </div>
 
-                      {/* Options for 1 person vs multiple, shown right after entering the name */}
-                      <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/60 space-y-3">
-                        <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider flex items-center gap-1.5">
-                          <Users className="w-4 h-4 text-emerald-800" />
-                          Yaa is diwaangelinaya? (Who is registering?) <span className="text-red-500">*</span>
-                        </label>
-                        <div className="grid grid-cols-2 gap-3">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setStudentType("single");
-                              setStudentCount("1");
-                              setExtraStudents([]);
-                            }}
-                            className={`rounded-xl border p-3 text-xs font-bold text-center transition flex flex-col items-center justify-center gap-1.5 cursor-pointer ${
-                              studentType === "single"
-                                ? "border-emerald-700 bg-white text-emerald-800 ring-2 ring-emerald-700/10"
-                                : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
-                            }`}
-                          >
-                            <span className="text-xs">Kaligay (1 Qof)</span>
-                            <span className="text-[10px] text-stone-400 font-normal">Myself only</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setStudentType("multiple");
-                              if (studentCount === "1") {
-                                setStudentCount("2");
-                                setExtraStudents([""]);
-                              }
-                            }}
-                            className={`rounded-xl border p-3 text-xs font-bold text-center transition flex flex-col items-center justify-center gap-1.5 cursor-pointer ${
-                              studentType === "multiple"
-                                ? "border-emerald-700 bg-white text-emerald-800 ring-2 ring-emerald-700/10"
-                                : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
-                            }`}
-                          >
-                            <span>Aniga iyo Walaalahay / Dad kale</span>
-                            <span className="text-[10px] text-stone-400 font-normal">More than 1 student</span>
-                          </button>
-                        </div>
-
-                        {/* If Multiple is selected, show dropdown to choose count and sibling input fields */}
-                        {studentType === "multiple" && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            className="pt-2 space-y-3"
-                          >
-                            <div>
-                              <label className="block text-[11px] font-semibold text-stone-600 mb-1.5">
-                                Dooro Tirada wadajir isu diwaangelinaysa (Total Students):
-                              </label>
-                              <select
-                                id="student-count-select-step1"
-                                value={studentCount}
-                                onChange={(e) => handleStudentCountChange(e.target.value)}
-                                className="w-full rounded-xl border border-stone-200 p-2.5 bg-white text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-700/20"
-                              >
-                                <option value="2">2 Arday</option>
-                                <option value="3">3 Arday</option>
-                                <option value="4">4 Arday</option>
-                                <option value="5+">5+ Arday (Qoys / Koox)</option>
-                              </select>
-                            </div>
-
-                            <div className="bg-white border border-stone-200/60 rounded-xl p-3 space-y-2">
-                              <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block">
-                                Qor magacyada walaalaha ama ardayda kale:
-                              </span>
-                              <div className="space-y-2">
-                                {extraStudents.map((studentName, idx) => (
-                                  <div key={idx} className="flex items-center gap-2">
-                                    <span className="text-[11px] font-bold text-stone-500 shrink-0">
-                                      Ardayga {idx + 2}aad:
-                                    </span>
-                                    <input
-                                      type="text"
-                                      value={studentName}
-                                      onChange={(e) => handleExtraStudentChange(idx, e.target.value)}
-                                      placeholder={`Magaca buuxa ee walaalka ama ardayga ${idx + 2}aad`}
-                                      className="flex-1 rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1.5 text-xs text-stone-900 focus:outline-none focus:bg-white focus:border-emerald-700"
-                                    />
-                                    {extraStudents.length > 1 && (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleRemoveStudentField(idx)}
-                                        className="p-1 text-red-500 hover:bg-red-50 rounded transition cursor-pointer"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={handleAddStudentField}
-                                className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 hover:text-emerald-700 pt-1 cursor-pointer"
-                              >
-                                <Plus className="w-3 h-3" />
-                                <span>Kudar Arday Kale [+]</span>
-                              </button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </div>
-
-                      {/* Country & City Row */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                            <Globe className="w-4 h-4 text-emerald-800" />
-                            Wadanka (Country) <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            id="student-country-select"
-                            required
-                            value={country}
-                            onChange={(e) => {
-                              setCountry(e.target.value);
-                              if (errors.country) setErrors({ ...errors, country: "" });
-                            }}
-                            className={`w-full rounded-xl border p-3 bg-white text-xs text-stone-900 focus:outline-none focus:ring-2 ${
-                              errors.country
-                                ? "border-red-300 focus:ring-red-500/20"
-                                : "border-stone-200 focus:ring-emerald-700/20 focus:border-emerald-700"
-                            }`}
-                          >
-                            <option value="">-- Dooro Wadanka --</option>
-                            {COUNTRIES.map((cty) => (
-                              <option key={cty} value={cty}>
-                                {cty}
-                              </option>
-                            ))}
-                          </select>
-                          {errors.country && (
-                            <p className="mt-1 text-xs text-red-500">{errors.country}</p>
-                          )}
-
-                          {country === "Wadan Kale (Specify...)" && (
-                            <motion.div
-                              initial={{ opacity: 0, y: -5 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="mt-2"
+                      {/* Dynamic Sibling Inputs if Multi-Student chosen */}
+                      {studentType === "multiple" && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          className="pt-2 space-y-3"
+                        >
+                          <div>
+                            <label className="block text-[11px] font-semibold text-stone-600 mb-1.5">
+                              Tirada guud ee ardayda qoyska (Total Students):
+                            </label>
+                            <select
+                              id="student-count-select-step1"
+                              value={studentCount}
+                              onChange={(e) => handleStudentCountChange(e.target.value)}
+                              className="w-full rounded-xl border border-stone-200 p-2.5 bg-white text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-700/20"
                             >
-                              <input
-                                id="student-custom-country-input"
-                                type="text"
-                                required
-                                value={customCountry}
-                                onChange={(e) => setCustomCountry(e.target.value)}
-                                placeholder="Qor wadanka kale ee aad joogto"
-                                className="w-full rounded-xl border border-stone-200 p-3 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
-                              />
-                            </motion.div>
-                          )}
-                        </div>
+                              <option value="2">2 Arday (2 Students)</option>
+                              <option value="3">3 Arday (3 Students)</option>
+                              <option value="4">4 Arday (4 Students)</option>
+                              <option value="5+">5+ Arday (5+ Students)</option>
+                            </select>
+                          </div>
 
-                        <div>
-                          <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                            <MapPin className="w-4 h-4 text-emerald-800" />
-                            Magaalada (City) <span className="text-red-500">*</span>
-                          </label>
+                          <div className="bg-white border border-stone-200/60 rounded-xl p-3 space-y-2">
+                            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block">
+                              Qor magacyada ardayda kale ee ku wehelisa:
+                            </span>
+                            <div className="space-y-2">
+                              {extraStudents.map((studentName, idx) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                  <span className="text-[10.5px] font-bold text-stone-500 shrink-0">
+                                    Ardayga {idx + 2}aad:
+                                  </span>
+                                  <input
+                                    type="text"
+                                    value={studentName}
+                                    onChange={(e) => handleExtraStudentChange(idx, e.target.value)}
+                                    placeholder={`Magaca buuxa ee ardayga ${idx + 2}aad`}
+                                    className="flex-1 rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1.5 text-xs text-stone-900 focus:outline-none focus:bg-white focus:border-emerald-700"
+                                  />
+                                  {extraStudents.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveStudentField(idx)}
+                                      className="p-1 text-red-500 hover:bg-red-50 rounded transition cursor-pointer"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleAddStudentField}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 hover:text-emerald-700 pt-1 cursor-pointer"
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>Ku dar arday kale [+]</span>
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
+
+                    {/* Country Selector (wadanka doorasho u gali outomatic) */}
+                    <div>
+                      <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                        <Globe className="w-4 h-4 text-emerald-800" />
+                        Wadanka aad Joogto (Country) <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        id="student-country-select"
+                        required
+                        value={country}
+                        onChange={(e) => {
+                          setCountry(e.target.value);
+                          if (errors.country) setErrors({ ...errors, country: "" });
+                        }}
+                        className={`w-full rounded-xl border p-3 bg-white text-xs font-bold text-stone-900 focus:outline-none focus:ring-2 ${
+                          errors.country
+                            ? "border-red-300 focus:ring-red-500/20"
+                            : "border-stone-200 focus:ring-emerald-700/20 focus:border-emerald-700"
+                        }`}
+                      >
+                        <option value="">-- Dooro Wadanka (Choose Country) --</option>
+                        {COUNTRIES.map((cty) => (
+                          <option key={cty} value={cty}>
+                            {cty}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.country && (
+                        <p className="mt-1 text-xs text-red-500">{errors.country}</p>
+                      )}
+
+                      {country === "Wadan Kale (Specify...)" && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mt-2"
+                        >
                           <input
-                            id="student-city-input"
+                            id="student-custom-country-input"
                             type="text"
                             required
-                            value={city}
-                            onChange={(e) => {
-                              setCity(e.target.value);
-                              if (errors.city) setErrors({ ...errors, city: "" });
-                            }}
-                            placeholder="Tusaale: Hargeisa, Muqdisho ama London"
-                            className={`w-full rounded-xl border p-3 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 ${
-                              errors.city
-                                ? "border-red-300 focus:ring-red-500/20"
-                                : "border-stone-200 focus:ring-emerald-700/20 focus:border-emerald-700"
-                            }`}
+                            value={customCountry}
+                            onChange={(e) => setCustomCountry(e.target.value)}
+                            placeholder="Qor magaca wadanka kale ee aad joogto"
+                            className="w-full rounded-xl border border-stone-200 p-3 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
                           />
-                          {errors.city && (
-                            <p className="mt-1 text-xs text-red-500">{errors.city}</p>
-                          )}
-                        </div>
-                      </div>
+                        </motion.div>
+                      )}
+                    </div>
 
-                      {/* Email Address */}
+                    {/* WhatsApp & Email (WhatsApp doorasho & Email) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                          <Mail className="w-4 h-4 text-emerald-800" />
-                          Email (Gmail) si toos ah fariintu kuugu dhacdo <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          id="student-email-input"
-                          type="email"
-                          required
-                          value={email}
-                          onChange={(e) => {
-                            setEmail(e.target.value);
-                            if (errors.email) setErrors({ ...errors, email: "" });
-                          }}
-                          placeholder="Tusaale: ahmed11@gmail.com"
-                          className={`w-full rounded-xl border p-3 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 ${
-                            errors.email
-                              ? "border-red-300 focus:ring-red-500/20"
-                              : "border-stone-200 focus:ring-emerald-700/20 focus:border-emerald-700"
-                          }`}
-                        />
-                        {errors.email && (
-                          <p className="mt-1 text-xs text-red-500">{errors.email}</p>
-                        )}
-                      </div>
-
-                      {/* WhatsApp / Phone Number */}
-                      <div>
-                        <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                          <Phone className="w-4 h-4 text-emerald-800" />
-                          Lambarka WhatsApp <span className="text-red-500">*</span>
+                          <Phone className="w-4 h-4 text-[#128C7E]" />
+                          WhatsApp Number <span className="text-red-500">*</span>
                         </label>
                         <input
                           id="student-phone-input"
@@ -842,172 +783,233 @@ export default function RegistrationModal({
                           <p className="mt-1 text-xs text-red-500">{errors.phone}</p>
                         )}
                       </div>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="space-y-4"
-                    >
-                      {/* Course */}
+
                       <div>
                         <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                          <BookOpen className="w-4 h-4 text-emerald-800" />
-                          Casharka qaybtuu rabo (Select Course) <span className="text-red-500">*</span>
+                          <Mail className="w-4 h-4 text-emerald-800" />
+                          Email (Gmail Address) <span className="text-red-500">*</span>
                         </label>
+                        <input
+                          id="student-email-input"
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => {
+                            setEmail(e.target.value);
+                            if (errors.email) setErrors({ ...errors, email: "" });
+                          }}
+                          placeholder="Tusaale: ahmed11@gmail.com"
+                          className={`w-full rounded-xl border p-3 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 ${
+                            errors.email
+                              ? "border-red-300 focus:ring-red-500/20"
+                              : "border-stone-200 focus:ring-emerald-700/20 focus:border-emerald-700"
+                          }`}
+                        />
+                        {errors.email && (
+                          <p className="mt-1 text-xs text-red-500">{errors.email}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 2: Casharka & Wakhtiga (Course, Plan & Timing) */}
+                  <div className="space-y-4 pt-4 border-t border-stone-100">
+                    <h4 className="text-xs font-extrabold text-emerald-800 uppercase tracking-widest border-b border-stone-100 pb-2">
+                      2. Doorashada Casharada & Saacadaha (Academy Choices)
+                    </h4>
+
+                    {/* Course selection (course dooro outomatic) */}
+                    <div>
+                      <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                        <BookOpen className="w-4 h-4 text-emerald-800" />
+                        Dooro Koorsada (Select Course) <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        id="student-course-select"
+                        value={course}
+                        onChange={(e) => setCourse(e.target.value)}
+                        className="w-full rounded-xl border border-stone-200 p-3 bg-white text-xs font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
+                      >
+                        {COURSES.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.title} ({c.subTitle})
+                          </option>
+                        ))}
+                      </select>
+                      {selectedCourseId && course === selectedCourseId && (
+                        <div className="text-[10px] font-bold text-emerald-800 bg-emerald-50/70 border border-emerald-100 rounded-lg px-2.5 py-1.5 mt-2 flex items-center gap-1.5 font-sans">
+                          <span className="text-[11px]">✨</span>
+                          <span>Koorsadii aad soo gujisay ayaa si toos ah u diyaarsan (Automatically Pre-selected)</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Study Plan Selection (Plan dooro, showing prices & discount for 2 or more students) */}
+                    <div className="space-y-3">
+                      <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider flex items-center gap-1.5">
+                        <DollarSign className="w-4 h-4 text-emerald-800" />
+                        Qorshaha Maalmaha (Choose Days Plan) <span className="text-red-500">*</span>
+                      </label>
+
+                      {/* Dynamic Family Discount Notice Banner */}
+                      {studentTotalCount > 1 && (
+                        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-left flex items-start gap-2.5">
+                          <span className="text-lg">🎉</span>
+                          <div>
+                            <span className="text-xs font-extrabold text-emerald-950 block">Qiimo Dhimis Qoys (25% Family Discount Applied!)</span>
+                            <span className="text-[10.5px] text-emerald-800 leading-relaxed font-sans block mt-0.5">
+                              Maadaama aad diiwaan-gelisay <strong>{studentTotalCount} arday</strong>, waxaa si automatic ah kuugu dhaqan galay <strong>25% Qiimo Dhimis ah</strong>. Qiimaha hoose waa la dhimay mar hore!
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Dropdown with prices */}
+                      <div>
                         <select
-                          id="student-course-select"
-                          value={course}
-                          onChange={(e) => setCourse(e.target.value)}
-                          className="w-full rounded-xl border border-stone-200 p-3 bg-white text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
+                          id="student-days-select"
+                          value={studyDays}
+                          onChange={(e) => setStudyDays(Number(e.target.value))}
+                          className="w-full rounded-xl border border-stone-200 p-3 bg-white text-xs font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
                         >
-                          {COURSES.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.title}
-                            </option>
-                          ))}
+                          <option value={2}>2 Cisho (Maalmood) asbuucii — ${getCalculatedPrice(2, studentTotalCount)} / Bishii</option>
+                          <option value={3}>3 Cisho (Maalmood) asbuucii — ${getCalculatedPrice(3, studentTotalCount)} / Bishii (Ugu habboon)</option>
+                          <option value={4}>4 Cisho (Maalmood) asbuucii — ${getCalculatedPrice(4, studentTotalCount)} / Bishii</option>
+                          <option value={5}>5 Cisho (Maalmood) asbuucii — ${getCalculatedPrice(5, studentTotalCount)} / Bishii (Dhammaystiran)</option>
                         </select>
                       </div>
 
-                      {/* Level */}
-                      <div>
-                        <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5">
-                          Heerkaaga Aqooneed ee Casharka (Level)
-                        </label>
-                        <div className="grid grid-cols-3 gap-2">
-                          {["Bilaabo (Beginner)", "Dhexe (Intermediate)", "Sare (Advanced)"].map(
-                            (lvl) => (
-                              <button
-                                key={lvl}
-                                type="button"
-                                onClick={() => setLevel(lvl)}
-                                className={`rounded-xl border p-3 text-xs font-bold text-center transition cursor-pointer ${
-                                  level === lvl
-                                    ? "border-emerald-700 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-700/10"
-                                    : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
-                                }`}
-                              >
-                                {lvl.split(" ")[0]}
-                              </button>
-                            )
-                          )}
-                        </div>
-                                              {/* Payment Plan */}
-                      <div>
-                        <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                          <DollarSign className="w-4 h-4 text-emerald-800" />
-                          Qorshaha & Maalmaha (Study Plan & Price)
-                        </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {[
-                            { days: 2, label: "2 Maalmood asbuucii", desc: "2 Days / Week" },
-                            { days: 3, label: "3 Maalmood asbuucii", desc: "3 Days / Week" },
-                            { days: 4, label: "4 Maalmood asbuucii", desc: "4 Days / Week" },
-                            { days: 5, label: "5 Maalmood (Ugu caansan)", desc: "5 Days / Week", popular: true },
-                          ].map((plan) => {
-                            const calculatedPrice = getCalculatedPrice(plan.days, studentTotalCount);
-                            const standardPrice = getStandardPrice(plan.days, studentTotalCount);
-                            const discount = standardPrice - calculatedPrice;
-
-                            return (
-                              <button
-                                key={plan.days}
-                                type="button"
-                                onClick={() => setStudyDays(plan.days)}
-                                className={`relative rounded-2xl border p-4 text-left transition duration-200 cursor-pointer flex flex-col justify-between ${
-                                  studyDays === plan.days
-                                    ? "border-emerald-700 bg-emerald-50/40 ring-2 ring-emerald-700/10"
-                                    : "border-stone-200 bg-white hover:bg-stone-50"
-                                }`}
-                              >
-                                {plan.popular && (
-                                  <span className="absolute -top-2 right-3 bg-amber-500 text-stone-950 font-extrabold text-[8px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
-                                    Popular
-                                  </span>
-                                )}
-                                <div>
-                                  <span className="text-xs font-bold text-stone-900 block">
-                                    {plan.label}
-                                  </span>
-                                  <span className="text-[10px] text-stone-400 block mb-2">
-                                    {plan.desc}
-                                  </span>
-                                </div>
-                                <div className="mt-2">
-                                  <div className="flex items-baseline gap-1">
-                                    <span className="text-xl font-black text-emerald-800">
-                                      ${calculatedPrice}
-                                    </span>
-                                    <span className="text-[10px] text-stone-500 font-medium">
-                                      / bishii
-                                    </span>
-                                    {discount > 0 && (
-                                      <span className="text-[10px] text-stone-400 line-through font-bold ml-1.5">
-                                        ${standardPrice}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {discount > 0 && (
-                                    <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100/50 rounded px-1.5 py-0.5 mt-1.5 inline-block">
-                                      Qiimo dhimis qoys (-${discount})
-                                    </span>
+                      {/* Styled pricing card list */}
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { days: 2, label: "2 Cisho Asbuucii" },
+                          { days: 3, label: "3 Cisho Asbuucii" },
+                          { days: 4, label: "4 Cisho Asbuucii" },
+                          { days: 5, label: "5 Cisho Asbuucii" }
+                        ].map((p) => {
+                          const computedPrice = getCalculatedPrice(p.days, studentTotalCount);
+                          const standardVal = getStandardPrice(p.days, studentTotalCount);
+                          const isSaving = standardVal - computedPrice;
+                          
+                          return (
+                            <button
+                              key={p.days}
+                              type="button"
+                              onClick={() => setStudyDays(p.days)}
+                              className={`rounded-2xl border p-3.5 text-left transition duration-150 cursor-pointer flex flex-col justify-between ${
+                                studyDays === p.days
+                                  ? "border-emerald-700 bg-emerald-50/40 ring-2 ring-emerald-700/10"
+                                  : "border-stone-200 bg-white hover:bg-stone-50"
+                              }`}
+                            >
+                              <div>
+                                <span className="text-[11px] font-bold text-stone-900 block">{p.label}</span>
+                                <span className="text-[9px] text-stone-400 block mb-2">{p.days} days per week</span>
+                              </div>
+                              <div>
+                                <div className="flex items-baseline gap-0.5">
+                                  <span className="text-lg font-black text-emerald-800">${computedPrice}</span>
+                                  <span className="text-[9px] text-stone-400">/mo</span>
+                                  {isSaving > 0 && (
+                                    <span className="text-[9px] text-stone-400 line-through ml-1">${standardVal}</span>
                                   )}
                                 </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>  </div>
-
-                      {/* Notes / Message */}
-                      <div>
-                        <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                          <MessageSquare className="w-4 h-4 text-emerald-800" />
-                          Fariin noo reeb faahfaahin dheeraad ah (Extra notes)
-                        </label>
-                        <textarea
-                          id="student-notes-textarea"
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                          placeholder="Tusaale: Haddii aad rabto saacado gaar ah ama faahfaahin dheeraad ah oo aad qabto..."
-                          rows={2.5}
-                          className="w-full rounded-xl border border-stone-200 p-3 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
-                        />
+                                {isSaving > 0 && (
+                                  <span className="text-[8.5px] font-bold text-emerald-700 block mt-0.5">Badbaadi -${isSaving}</span>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
-                    </motion.div>
-                  )}
+                    </div>
+
+                    {/* Timing Selector (Time-ka dooro doorsho u gali outomatic) */}
+                    <div>
+                      <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-emerald-800" />
+                        Wakhtiga aad Doorbidayso (Preferred Time) <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        id="student-time-select"
+                        required
+                        value={preferredTime}
+                        onChange={(e) => setPreferredTime(e.target.value)}
+                        className="w-full rounded-xl border border-stone-200 p-3 bg-white text-xs font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
+                      >
+                        <option value="Habeen (Evening: 6:00 PM - 10:00 PM)">Habeen (Evening: 6:00 PM - 10:00 PM) - Ugu habboon</option>
+                        <option value="Galab (Afternoon: 2:00 PM - 5:00 PM)">Galab (Afternoon: 2:00 PM - 5:00 PM)</option>
+                        <option value="Subax (Morning: 8:00 AM - 11:30 AM)">Subax (Morning: 8:00 AM - 11:30 AM)</option>
+                        <option value="Gelinka Dambe (Late Night: 10:00 PM - 12:00 AM)">Gelinka Dambe (Late Night: 10:00 PM - 12:00 AM)</option>
+                        <option value="Wakhti kasta (Flexible / Anytime)">Wakhti kasta (Flexible / Anytime)</option>
+                      </select>
+                    </div>
+
+                    {/* Live Pricing Summary Panel */}
+                    <div className="bg-emerald-950 text-white rounded-2xl p-4 border border-emerald-800/80 shadow-md">
+                      <div className="flex items-center justify-between border-b border-emerald-800/50 pb-2 mb-2.5">
+                        <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                          FAAHFAAHINTA QIIMAHA (Live Summary)
+                        </span>
+                        <span className="bg-emerald-800 text-[10px] text-emerald-100 font-extrabold px-2.5 py-0.5 rounded-full">
+                          {studentTotalCount === 1 ? "1 Arday" : `${studentTotalCount} Arday`}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs space-y-0.5 text-stone-300">
+                        <span>Qiimaha Caadiga (Standard Price):</span>
+                        <span className={studentTotalCount > 1 ? "line-through text-stone-400" : "font-bold text-white"}>
+                          ${getStandardPrice(studyDays, studentTotalCount)} / bishii
+                        </span>
+                      </div>
+                      {studentTotalCount > 1 && (
+                        <div className="flex items-center justify-between text-xs text-emerald-300 mt-1">
+                          <span>Qoys Qiimo Dhimis (25% Saved):</span>
+                          <span className="font-extrabold bg-emerald-900 px-2 py-0.5 rounded text-[10px] text-amber-300">
+                            -${getStandardPrice(studyDays, studentTotalCount) - getCalculatedPrice(studyDays, studentTotalCount)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between border-t border-emerald-800/50 pt-2.5 mt-2.5">
+                        <span className="text-xs font-bold text-white">Wadar ahaan bishii (Total Monthly Net):</span>
+                        <div className="text-right">
+                          <span className="text-lg sm:text-xl font-black text-amber-400">
+                            ${getCalculatedPrice(studyDays, studentTotalCount)}
+                          </span>
+                          <span className="text-[9px] text-emerald-200 block font-normal">/ bishii</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Optional Notes */}
+                    <div>
+                      <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                        <MessageSquare className="w-4 h-4 text-emerald-800" />
+                        Fariin noo reeb (Message or Notes - Optional)
+                      </label>
+                      <textarea
+                        id="student-notes-textarea"
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Tusaale: Haddii aad rabto saacado gaar ah ama faahfaahin dheeraad ah oo aad qabto..."
+                        rows={2}
+                        className="w-full rounded-xl border border-stone-200 p-3 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
+                      />
+                    </div>
+                  </div>
 
                   {/* Actions Bar */}
                   <div className="flex gap-3 pt-4 border-t border-stone-100 shrink-0">
-                    {step === 2 && (
-                      <button
-                        type="button"
-                        onClick={() => setStep(1)}
-                        className="flex-1 rounded-xl border border-stone-200 bg-white py-3.5 text-xs font-bold text-stone-700 hover:bg-stone-50 transition cursor-pointer"
-                      >
-                        Ku laabo (Back)
-                      </button>
-                    )}
-                    {step === 1 ? (
-                      <button
-                        type="button"
-                        onClick={handleNext}
-                        className="flex-1 rounded-xl bg-emerald-800 py-3.5 text-xs font-bold text-white hover:bg-emerald-700 transition shadow-md shadow-emerald-900/10 cursor-pointer text-center"
-                      >
-                        Sii Soco (Next)
-                      </button>
-                    ) : (
-                      <button
-                        type="submit"
-                        className="flex-1 rounded-xl bg-gradient-to-r from-emerald-800 to-emerald-700 py-3.5 text-xs font-bold text-white hover:opacity-95 transition shadow-md shadow-emerald-900/10 cursor-pointer flex items-center justify-center gap-1.5"
-                      >
-                        <span>Diiwaan-geli Hadda 🚀</span>
-                      </button>
-                    )}
+                    <button
+                      type="submit"
+                      className="w-full rounded-xl bg-gradient-to-r from-emerald-800 to-emerald-700 py-3.5 text-xs font-bold text-white hover:opacity-95 transition shadow-md shadow-emerald-900/10 cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <span>Diiwaan-geli Hadda 🚀</span>
+                    </button>
                   </div>
                 </form>
               ) : (
-                /* Success Screen with Only the Simple Somali Success Message */
+                /* Success Screen with friendly Somali registration success & automatic email confirmation details */
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -1018,11 +1020,67 @@ export default function RegistrationModal({
                     <CheckCircle className="w-12 h-12" />
                   </div>
 
-                  {/* The Single and Precise Requested Success Message */}
-                  <div className="bg-emerald-50/60 border border-emerald-100 rounded-2xl p-5 text-center shadow-sm">
-                    <p className="text-emerald-950 text-[14px] sm:text-base font-semibold leading-relaxed font-sans">
-                      Waad ku guulausatay diwaan galintaada baro quran academy 6 saac gudahood anaga kula soo xidhiidhayna fariin WhatsApp.
-                    </p>
+                  <div className="space-y-4">
+                    <h4 className="text-xl font-bold text-stone-900 font-display">
+                      Diiwaan-gelintaadu Waa Guul! 🎉
+                    </h4>
+                    
+                    {/* Main requested greeting & confirmation message */}
+                    <div className="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-5 text-left space-y-3.5 shadow-sm">
+                      <p className="text-emerald-950 text-xs sm:text-xs leading-relaxed font-semibold">
+                        👋 Ku soo dhowow Akadeemiyada, {name}!
+                      </p>
+                      
+                      <p className="text-emerald-950 text-xs sm:text-xs leading-relaxed font-sans">
+                        Hambalyo, waxaad ku guulaysatay is-diiwaan gelintaada <strong>Baro Quran Academy</strong>, hoyga barashada Qur'aanka Kariimka ah iyo Culuumta Shareecada!
+                      </p>
+
+                      <div className="bg-white/90 rounded-xl p-3 border border-emerald-200/50 space-y-1.5 text-[11px] text-emerald-900 font-sans">
+                        <span className="font-bold block text-emerald-800">📧 Nidaamka Email-ka Automatic (Gmail System):</span>
+                        <span>Fariinta xaqiijinta waxaa si toos ah loogu dirayaa cinwaankaaga: <strong className="text-stone-900">{email}</strong> iyo Maamulka (<strong className="text-stone-900">baroquranacademy1@gmail.com</strong>).</span>
+                        
+                        {sendingEmail && (
+                          <div className="flex items-center gap-2 mt-2 text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
+                            <svg className="animate-spin h-3 w-3 text-emerald-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>E-mailka xaqiijinta ayaa hadda la dirayaa... (Sending confirmation email...)</span>
+                          </div>
+                        )}
+
+                        {emailStatus && (
+                          <div className={`p-2 rounded-lg border mt-2 text-[10.5px] ${
+                            emailStatus.success 
+                              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-900 font-medium" 
+                              : "bg-amber-500/10 border-amber-500/20 text-amber-900"
+                          }`}>
+                            <strong className="block text-stone-900">Xaaladda E-mailka:</strong>
+                            <span>{emailStatus.message}</span>
+                            
+                            {!emailStatus.success && (
+                              <div className="mt-1.5 pt-1.5 border-t border-amber-200/30 text-[9.5px] text-stone-500 leading-normal">
+                                💡 Maamulaha: Fadlan iska hubi inaad 'Gmail Portal' ku xirtay Google Account-ka rasmiga ah ee <strong className="font-semibold text-stone-800">baroquranacademy1@gmail.com</strong> si emailada automatic-ga ah ay u baxaan.
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <p className="text-emerald-950 text-xs sm:text-xs leading-relaxed font-sans">
+                        Kooxdayada saaxiibtinimada leh ayaa kugula soo xidhiidhi doona WhatsApp-kaaga <strong>{phone}</strong> wax ka yar <strong>6 saacadood</strong> si loo dhammaystiro jadwalkaaga barasho. Aad ayaan ugu faraxsanahay madaama aad nala bilaabayso safarkaaga diineed!
+                      </p>
+                    </div>
+
+                    {/* Show a summary card of their registered details */}
+                    <div className="bg-stone-50 rounded-2xl p-4 border border-stone-100 text-left text-[11px] space-y-1.5 font-sans text-stone-700">
+                      <span className="font-bold text-stone-400 uppercase tracking-widest text-[9px] block mb-1">
+                        Faahfaahinta Diiwaan-gelinta (Registration Summary):
+                      </span>
+                      <div><span className="text-stone-500">ID-ga Ardayga:</span> <strong className="text-stone-950 font-mono">{generatedId}</strong></div>
+                      <div><span className="text-stone-500">Koorsada:</span> <strong className="text-stone-950">{COURSES.find(c => c.id === course)?.title || course}</strong></div>
+                      <div><span className="text-stone-500">Qorshaha & Qiimaha:</span> <strong className="text-emerald-800">{paymentPlan}</strong></div>
+                    </div>
                   </div>
 
                   {/* WhatsApp contact CTA & Close */}
