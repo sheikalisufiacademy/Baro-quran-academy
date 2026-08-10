@@ -129,6 +129,14 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- 
+      Formspree Integration Note:
+      Foomka isdiiwaangelinta hadda wuxuu ku jiraa React Component-ka `/src/components/RegistrationModal.tsx`.
+      Waxaan halkaas si guul leh ugu darnay action="https://formspree.io/f/xzdlykrv" iyo method="POST" 
+      si xogta ardayda is-diiwaangelisay loogu soo diro iimaylkaaga iyadoo la isticmaalayo Formspree.
+      Waxaa sidoo kale lagu daray name attributes-ka saxda ah (sida name="name", name="email", name="phone", name="message" jst.)
+      iyo JavaScript loading state ('Loading...' marka la dirayo) iyo 'Mahadsanid!' oo ah fariinta guusha.
+    -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -85,6 +85,7 @@ export default function RegistrationModal({
   
   // Gmail dispatch indicators
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [formspreeSubmitting, setFormspreeSubmitting] = useState(false);
   const [emailStatus, setEmailStatus] = useState<{ success: boolean; message: string } | null>(null);
 
   // Dynamic Pricing Helpers
@@ -247,6 +248,42 @@ export default function RegistrationModal({
     setIsSuccess(true);
     setEmailStatus(null);
 
+    // Save registration to Formspree endpoint (POST) as requested
+    setFormspreeSubmitting(true);
+    try {
+      const selectedCourseTitle = COURSES.find((c) => c.id === course)?.title || course;
+      const formSpreeData = {
+        name: name,
+        email: email,
+        phone: phone,
+        course: selectedCourseTitle,
+        level: level,
+        preferredTime: preferredTime,
+        country: finalCountry,
+        city: "Online",
+        paymentPlan: paymentPlan,
+        studentType: studentType,
+        studentCount: studentTotalCount,
+        additionalStudents: validExtraNames.join(", "),
+        generatedId: studentId,
+        message: notes || "Wax fariin ah lagama reebin"
+      };
+
+      await fetch("https://formspree.io/f/xzdlykrv", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(formSpreeData)
+      });
+      console.log("Xogta waxaa si guul leh loogu diray Formspree endpoint.");
+    } catch (formspreeErr) {
+      console.error("Cilad ayaa ku dhacday Formspree submission:", formspreeErr);
+    } finally {
+      setFormspreeSubmitting(false);
+    }
+
     // Save registration to Firestore so the admin can see it in real-time from anywhere!
     try {
       const registrationsCol = collection(db, "registrations");
@@ -284,62 +321,55 @@ export default function RegistrationModal({
         const selectedCourseTitle = COURSES.find((c) => c.id === course)?.title || course;
         
         // 1. Send beautifully formatted Somali confirmation email to the student
-        const studentSubject = `Hambalyo! Is-diiwaan gelintaada Baro Quran Academy waa guul ✅`;
+        const studentSubject = `Kusoo dhowow Baro Quran Academy, Sxb ${name}! 👋 Hoyga Barashada Diinta`;
         const studentBody = `
           <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; color: #1e293b;">
-            <div style="background-color: #065f46; padding: 24px; text-align: center; color: #ffffff;">
-              <h2 style="margin: 0; font-size: 24px; font-weight: bold;">Baro Quran Academy</h2>
-              <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Hoyga Barashada Diinteena Suuban</p>
+            <div style="background-color: #065f46; padding: 28px; text-align: center; color: #ffffff;">
+              <h2 style="margin: 0; font-size: 24px; font-weight: bold; letter-spacing: -0.5px;">Baro Quran Academy</h2>
+              <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Hoyga Barashada Diinteena Suuban</p>
             </div>
             <div style="padding: 32px 24px; text-align: left;">
-              <h3 style="margin-top: 0; color: #0f172a; font-size: 18px;">Ku soo dhowow Akadeemiyada, ${name}!</h3>
-              <p style="font-size: 14px; line-height: 1.6; color: #334155;">
-                Assalamu Alaikum Warahmatullahi Wabarakatuh,<br/><br/>
-                Kusoo dhowow akadeemiyada, <strong>${name}</strong>, waad ku guulaysatay isdiwaan galintaada baro quran academy. Wax ka yar 6 saac teamkeena ayaa kula soo xidhiidhi doona WhatsApp-kaaga <strong>${phone}</strong> si loo dhammaystiro jadwalkaaga. Mahadsanid, kusoo dhawoow mar kale baro quran academy, hoyga barashada diinteena suuban.
+              <h3 style="margin-top: 0; color: #065f46; font-size: 19px; font-weight: bold; border-bottom: 2px solid #f0fdf4; padding-bottom: 12px;">
+                Ku soo dhowow gacmo furan, Sxb ${name}! 👋
+              </h3>
+              
+              <p style="font-size: 14.5px; line-height: 1.7; color: #334155; margin-bottom: 24px;">
+                Assalamu Alaikum Warahmatullahi Wabarakatuh sxb <strong>${name}</strong>,<br/><br/>
+                Kusoo dhowow akadeemiyada! Aad iyo aad ayaan ugu faraxsanahay inaad nagu soo biirtay maanta, waxaanay noo tahay sharaf iyo farxad aad u weyn inaan kugu wehelino safarkaaga quruxda badan ee barashada Qur'aanka Kariimka ah iyo Diinta Suuban.
+                <br/><br/>
+                Sxb, <strong>is-diiwaangelintaada si guul leh ayaan u helnay, waana la arkay!</strong> Maamulka iyo macallimiinta akadeemiyada ayaa hadda ku hawlan diyaarinta jadwalkaaga iyo xogtaada si laguu bilaabo casharka sida ugu dhakhsaha badan.
+                <br/><br/>
+                Ha walwalin habayna, waxaad hubtaa inaan kula soo xiriiri doono <strong>wax ka yar 6 saacadood (In sha Allah)</strong> lambarkaaga WhatsApp-ka ee aad na siisay (<strong style="color: #16a34a;">${phone}</strong>) si aan u wada dhammaystirno casharkaaga kowaad, saacadaha aad doorbiday, iyo wixii faahfaahin dheeri ah.
               </p>
               
-              <div style="margin: 24px 0; padding: 18px; background-color: #f8fafc; border-left: 4px solid #10b981; border-radius: 8px;">
-                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #065f46; font-weight: bold;">Faahfaahinta Diiwaan-gelintaada:</h4>
+              <div style="margin: 28px 0; padding: 20px; background-color: #f0fdf4; border: 1px solid #dcfce7; border-left: 5px solid #10b981; border-radius: 12px;">
+                <h4 style="margin: 0 0 12px 0; font-size: 13.5px; color: #047857; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Aqoonsigaaga Ardaynimo (Student Details):</h4>
                 <table style="width: 100%; font-size: 13px; border-collapse: collapse; line-height: 1.8;">
                   <tr>
-                    <td style="color: #64748b; width: 140px;"><strong>Ardayga ID:</strong></td>
-                    <td style="color: #1e293b; font-family: monospace; font-weight: bold;">${studentId}</td>
+                    <td style="color: #065f46; width: 150px; padding: 4px 0;"><strong>ID-gaaga Gaarka Ah:</strong></td>
+                    <td style="color: #1e293b; font-family: monospace; font-weight: bold; background-color: #ffffff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0; display: inline-block;">${studentId}</td>
                   </tr>
                   <tr>
-                    <td style="color: #64748b;"><strong>Koorsada:</strong></td>
-                    <td style="color: #1e293b; font-weight: 500;">${selectedCourseTitle}</td>
+                    <td style="color: #065f46; padding: 4px 0;"><strong>Koorsada Doortay:</strong></td>
+                    <td style="color: #1e293b; font-weight: bold;">${selectedCourseTitle}</td>
                   </tr>
                   <tr>
-                    <td style="color: #64748b;"><strong>Heerka:</strong></td>
-                    <td style="color: #1e293b;">${level}</td>
+                    <td style="color: #065f46; padding: 4px 0;"><strong>Wakhtiga la Doortay:</strong></td>
+                    <td style="color: #1e293b; font-weight: bold; color: #1e293b;">${preferredTime}</td>
                   </tr>
-                  <tr>
-                    <td style="color: #64748b;"><strong>Wadanka/Magaalada:</strong></td>
-                    <td style="color: #1e293b;">${finalCountry}, ${city}</td>
-                  </tr>
-                  <tr>
-                    <td style="color: #64748b;"><strong>Qorshaha Dooran:</strong></td>
-                    <td style="color: #1e293b; font-weight: bold; color: #065f46;">${paymentPlan}</td>
-                  </tr>
-                  <tr>
-                    <td style="color: #64748b;"><strong>Nooca Diiwaan-gelinta:</strong></td>
-                    <td style="color: #1e293b;">${studentType === "multiple" ? "Ka badan 1 arday" : "Hal arday"}</td>
-                  </tr>
-                  ${validExtraNames.length > 0 ? `
-                  <tr>
-                    <td style="color: #64748b; vertical-align: top;"><strong>Ardayda kale:</strong></td>
-                    <td style="color: #1e293b;">${validExtraNames.join(", ")}</td>
-                  </tr>
-                  ` : ""}
                 </table>
               </div>
               
-              <p style="font-size: 12px; color: #64748b; border-top: 1px solid #f1f5f9; padding-top: 15px;">
-                Haddii aad qabto wax su'aalo ah oo degdeg ah, fadlan nagala soo xiriir WhatsApp-ka rasmiga ah ee Akadeemiyada.
+              <p style="font-size: 14px; line-height: 1.6; color: #475569; margin-top: 24px;">
+                Cilmiga Eebbe ha kuu fududeeyo, sxb! Waxaan kuu rajaynaynaa safar aqooneed oo barako leh oo noloshaada iyo aakhiradaadaba iftiimiya.
+              </p>
+              
+              <p style="font-size: 13px; color: #64748b; border-top: 1px solid #f1f5f9; padding-top: 18px; margin-top: 28px; font-style: italic; text-align: center;">
+                Sxbnimada iyo barashada khayrka ha inoo sii socoto! Haddii aad qabto wax su'aal ah, ha ka waaban inaad nagula soo xiriirto WhatsApp-ka.
               </p>
             </div>
-            <div style="background-color: #f1f5f9; padding: 16px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
-              &copy; 2026 Baro Quran Academy. All rights reserved.
+            <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9;">
+              Maamulka Baro Quran Academy &copy; 2026. All rights reserved.
             </div>
           </div>
         `;
@@ -459,6 +489,11 @@ export default function RegistrationModal({
         message: "Ogeysiis Maamulka: Email automatic ah ma bixin madaama Gmail-ka aan weli la isku xirin. Fadlan tag qaybta 'Gmail Portal' ee sare si aad u xirto Google Account-ka rasmiga ah ee baroquranacademy1@gmail.com si emailadu u baxaan."
       });
     }
+
+    // Auto redirect to thanks.html after a friendly 2.5s delay
+    setTimeout(() => {
+      window.location.href = "/thanks.html";
+    }, 2500);
   };
 
   const resetForm = () => {
@@ -563,7 +598,15 @@ export default function RegistrationModal({
             {/* Content Scroll Area */}
             <div className="p-6 overflow-y-auto flex-1">
               {!isSuccess ? (
-                <form onSubmit={handleSubmit} className="space-y-6 text-left">
+                <form
+                  onSubmit={handleSubmit}
+                  action="https://formspree.io/f/xzdlykrv"
+                  method="POST"
+                  className="space-y-6 text-left"
+                >
+                  {/* Formspree Next Redirect Integration */}
+                  <input type="hidden" name="_next" value="/thanks.html" />
+
                   {/* Section 1: Macluumaadka Shaqsiga (Personal Details) */}
                   <div className="space-y-4">
                     <h4 className="text-xs font-extrabold text-emerald-800 uppercase tracking-widest border-b border-stone-100 pb-2">
@@ -579,6 +622,7 @@ export default function RegistrationModal({
                       <input
                         id="student-name-input"
                         type="text"
+                        name="name"
                         required
                         value={name}
                         onChange={(e) => {
@@ -714,6 +758,7 @@ export default function RegistrationModal({
                       </label>
                       <select
                         id="student-country-select"
+                        name="country"
                         required
                         value={country}
                         onChange={(e) => {
@@ -746,6 +791,7 @@ export default function RegistrationModal({
                           <input
                             id="student-custom-country-input"
                             type="text"
+                            name="customCountry"
                             required
                             value={customCountry}
                             onChange={(e) => setCustomCountry(e.target.value)}
@@ -766,6 +812,7 @@ export default function RegistrationModal({
                         <input
                           id="student-phone-input"
                           type="tel"
+                          name="phone"
                           required
                           value={phone}
                           onChange={(e) => {
@@ -792,6 +839,7 @@ export default function RegistrationModal({
                         <input
                           id="student-email-input"
                           type="email"
+                          name="email"
                           required
                           value={email}
                           onChange={(e) => {
@@ -826,6 +874,7 @@ export default function RegistrationModal({
                       </label>
                       <select
                         id="student-course-select"
+                        name="course"
                         value={course}
                         onChange={(e) => setCourse(e.target.value)}
                         className="w-full rounded-xl border border-stone-200 p-3 bg-white text-xs font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
@@ -868,6 +917,7 @@ export default function RegistrationModal({
                       <div>
                         <select
                           id="student-days-select"
+                          name="studyDays"
                           value={studyDays}
                           onChange={(e) => setStudyDays(Number(e.target.value))}
                           className="w-full rounded-xl border border-stone-200 p-3 bg-white text-xs font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700"
@@ -932,6 +982,7 @@ export default function RegistrationModal({
                       </label>
                       <select
                         id="student-time-select"
+                        name="preferredTime"
                         required
                         value={preferredTime}
                         onChange={(e) => setPreferredTime(e.target.value)}
@@ -989,6 +1040,7 @@ export default function RegistrationModal({
                       </label>
                       <textarea
                         id="student-notes-textarea"
+                        name="message"
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         placeholder="Tusaale: Haddii aad rabto saacado gaar ah ama faahfaahin dheeraad ah oo aad qabto..."
@@ -1002,9 +1054,14 @@ export default function RegistrationModal({
                   <div className="flex gap-3 pt-4 border-t border-stone-100 shrink-0">
                     <button
                       type="submit"
-                      className="w-full rounded-xl bg-gradient-to-r from-emerald-800 to-emerald-700 py-3.5 text-xs font-bold text-white hover:opacity-95 transition shadow-md shadow-emerald-900/10 cursor-pointer flex items-center justify-center gap-1.5"
+                      disabled={sendingEmail || formspreeSubmitting}
+                      className="w-full rounded-xl bg-gradient-to-r from-emerald-800 to-emerald-700 py-3.5 text-xs font-bold text-white hover:opacity-95 transition shadow-md shadow-emerald-900/10 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
                     >
-                      <span>Diiwaan-geli Hadda 🚀</span>
+                      {sendingEmail || formspreeSubmitting ? (
+                        <span>Diraya xogta (Loading...) ⌛</span>
+                      ) : (
+                        <span>Diiwaan-geli Hadda 🚀</span>
+                      )}
                     </button>
                   </div>
                 </form>
@@ -1022,7 +1079,7 @@ export default function RegistrationModal({
 
                   <div className="space-y-4">
                     <h4 className="text-xl font-bold text-stone-900 font-display">
-                      Diiwaan-gelintaadu Waa Guul! 🎉
+                      Mahadsanid! Diiwaan-gelintaadu Waa Guul! 🎉
                     </h4>
                     
                     {/* Main requested greeting & confirmation message */}
@@ -1036,8 +1093,8 @@ export default function RegistrationModal({
                       </p>
 
                       <div className="bg-white/90 rounded-xl p-3 border border-emerald-200/50 space-y-1.5 text-[11px] text-emerald-900 font-sans">
-                        <span className="font-bold block text-emerald-800">📧 Nidaamka Email-ka Automatic (Gmail System):</span>
-                        <span>Fariinta xaqiijinta waxaa si toos ah loogu dirayaa cinwaankaaga: <strong className="text-stone-900">{email}</strong> iyo Maamulka (<strong className="text-stone-900">baroquranacademy1@gmail.com</strong>).</span>
+                        <span className="font-bold block text-emerald-800">📬 Formspree & Gmail System:</span>
+                        <span>Xogtaada waxaa si guul leh loogu gudbiyay Formspree (iimayl ahaan). Sidoo kale fariinta xaqiijinta waxaa si toos ah loogu dirayaa cinwaankaaga: <strong className="text-stone-900">{email}</strong> iyo Maamulka (<strong className="text-stone-900">baroquranacademy1@gmail.com</strong>).</span>
                         
                         {sendingEmail && (
                           <div className="flex items-center gap-2 mt-2 text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
